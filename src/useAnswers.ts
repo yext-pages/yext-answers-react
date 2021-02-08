@@ -204,6 +204,10 @@ export const useAnswers = () => {
     handleSearch('', undefined, undefined);
   };
 
+  const simpleFilter = () => {
+    console.log('TODO(tredshaw): simple filter');
+  };
+
   return {
     state,
     actions: {
@@ -217,6 +221,7 @@ export const useAnswers = () => {
       nextAutocompleteOption,
       prevAutocompleteOption,
       clearSearch,
+      simpleFilter,
     },
   };
 };
