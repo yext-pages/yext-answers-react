@@ -5,6 +5,8 @@ import {
   SimpleFilter,
   SortBy,
   VerticalResults,
+  LocationBias,
+  SearchIntent
 } from '@yext/answers-core';
 type AutocompleteState = {
   autocompleteOptions: {
@@ -46,6 +48,8 @@ export type InitialStateType = {
   autocomplete: AutocompleteState;
   debug: boolean;
   facetSorter?: (facets: Facet[]) => Facet[];
+  locationBias?: LocationBias;
+  searchIntents?: SearchIntent[];
 };
 
 export const initialState: InitialStateType = {
@@ -72,4 +76,6 @@ export const initialState: InitialStateType = {
     selectedIndex: -1,
   },
   debug: false,
+  locationBias: undefined,
+  searchIntents: []
 };

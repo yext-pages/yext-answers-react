@@ -149,6 +149,8 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
         facets: facetSorter ? facetSorter(facets) : sortFacets(facets),
         appliedFilters,
         facetFilters,
+        locationBias: response.locationBias,
+        searchIntents: response.searchIntents
       };
     }
     case 'SET_AUTOCOMPLETE':
