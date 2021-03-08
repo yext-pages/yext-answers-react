@@ -9,12 +9,17 @@ app shows a basic example of using this library.
 
 # Table of Contents
 
-- [Installation](#Installation)
-- [Getting Started](#Getting-Started)
-- [Example](#Basic-Example)
-- [Documentation](#Documentation)
-  - [State](#State)
-  - [Actions](#Actions)
+- [Yext Answers: React](#yext-answers-react)
+- [Table of Contents](#table-of-contents)
+- [Installation](#installation)
+    - [Implementation Details](#implementation-details)
+    - [Create React App](#create-react-app)
+- [Getting Started](#getting-started)
+- [Basic Example](#basic-example)
+- [Documentation](#documentation)
+  - [State](#state)
+  - [Actions](#actions)
+  - [Todos](#todos)
 
 # Installation
 
@@ -195,3 +200,4 @@ action.runSearch();
 
 - Analytics
 - Universal Search
+- Simple Filtering

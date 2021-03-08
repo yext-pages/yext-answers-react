@@ -4,6 +4,7 @@ import {
   provideCore,
   SortBy,
   VerticalSearchResponse,
+  SimpleFilter,
 } from '@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { getFacetFilters, sortFacets } from './facetUtilties';
@@ -27,6 +28,7 @@ export type Action =
   | { type: 'PREVIOUS_AUTOCOMPLETE_OPTION' }
   | { type: 'APPEND_RESULTS'; results: any[] }
   | { type: 'UPDATE_SORT_BYS'; sortBys?: SortBy[] }
+  | { type: 'SIMPLE_FILTER_UPDATE'; simpleFilters?: SimpleFilter[] }
   | { type: 'UPDATE_FACETS'; facets: Facet[] };
 
 const reducer = (state: InitialStateType, action: Action): InitialStateType => {

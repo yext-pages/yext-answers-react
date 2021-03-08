@@ -204,6 +204,28 @@ export const useAnswers = () => {
     handleSearch('', undefined, undefined);
   };
 
+  const simpleFilter = async (
+    fieldId: string,
+    comparator: string,
+    comparedValue = 'test'
+  ) => {
+      let simpleFilters = [];
+      simpleFilters.push({
+        fieldId: fieldId,
+        comparator: comparator ? comparator : '$eq',
+        comparedValue: comparedValue,
+      });
+
+    // TODO(tredshaw):
+        // is dispatch from the react event system? yes
+        dispatch({
+          type: 'SIMPLE_FILTER_UPDATE',
+          simpleFilters: simpleFilters,
+        });
+
+      handleSearch(lastSearchedTerm, simpleFilters, undefined);
+  };
+
   return {
     state,
     actions: {
@@ -217,6 +239,7 @@ export const useAnswers = () => {
       nextAutocompleteOption,
       prevAutocompleteOption,
       clearSearch,
+      simpleFilter,
     },
   };
 };
