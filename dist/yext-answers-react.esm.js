@@ -1369,7 +1369,7 @@ var useAnswers = function useAnswers() {
 
   var toggleFacet = /*#__PURE__*/function () {
     var _ref5 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee5(facetFieldId, optionDisplayName, updateSearchResults) {
-      var updatedFacets, updatedFacetFilters;
+      var updatedFacets, facets2, updatedFacetFilters;
       return runtime_1.wrap(function _callee5$(_context5) {
         while (1) {
           switch (_context5.prev = _context5.next) {
@@ -1399,7 +1399,8 @@ var useAnswers = function useAnswers() {
               // })
 
               console.log("BEFORE:  ", facets);
-              updatedFacetFilters = facets.filter(function (facet) {
+              facets2 = displayableToFacets(updatedFacets);
+              updatedFacetFilters = facets2.filter(function (facet) {
                 facet.options.forEach(function (o) {
                   console.log(facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
 
@@ -1430,10 +1431,10 @@ var useAnswers = function useAnswers() {
               console.log("AFTER:  ", updatedFacetFilters);
 
               if (updateSearchResults) {
-                handleSearch(lastSearchedTerm, displayableToFacets(updatedFacets), sortBys);
+                handleSearch(lastSearchedTerm, updatedFacetFilters, sortBys);
               }
 
-            case 8:
+            case 9:
             case "end":
               return _context5.stop();
           }

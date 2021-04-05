@@ -151,7 +151,8 @@ export const useAnswers = () => {
     //   })
     // })
     console.log("BEFORE:  ", facets);
-    const updatedFacetFilters = facets.filter(facet => {
+    const facets2 = displayableToFacets(updatedFacets)
+    const updatedFacetFilters = facets2.filter(facet => {
       facet.options.forEach((o) => {
         console.log(facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
         if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
@@ -182,7 +183,7 @@ export const useAnswers = () => {
     console.log("AFTER:  ", updatedFacetFilters);
 
     if (updateSearchResults) {
-      handleSearch(lastSearchedTerm, displayableToFacets(updatedFacets), sortBys);
+      handleSearch(lastSearchedTerm, updatedFacetFilters, sortBys);
     }
   };
 
