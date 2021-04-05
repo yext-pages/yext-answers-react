@@ -8,7 +8,7 @@ import { useContext } from 'react';
 import RecentSearches from 'recent-searches';
 import { AnswersConfig } from './AnswersConfig';
 import { AppContext } from './AnswersStore';
-import { getSelectedFacets, toggleFacetObject } from './facetUtilties';
+import { getSelectedFacets, toggleFacetObject, displayableToFacets } from './facetUtilties';
 import { InitialStateType } from './initialState';
 import { createFacets } from './createFacets';
 
@@ -138,36 +138,50 @@ export const useAnswers = () => {
       type: 'UPDATE_DISPLAYABLE_FACETS',
       displayableFacets: updatedFacets
     })
-
     // let removed = false;
-    console.log("BEFORE:  ", facets);
-    const updatedFacetFilters = facets.filter(facet => {
-      facet.options.forEach((o) => {
-        console.log(facet.fieldId, facetFieldId,"-", o.value, optionDisplayName);
-        if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
-          console.log("removed = true", facet.fieldId, facetFieldId,"-", o.value, optionDisplayName);
+    
+    const updatedFacetFilters2 = updatedFacets.filter((facet) => {
+      facet.options.forEach((option) => {
+        if(facet.fieldId == facetFieldId && option.value === optionDisplayName && option.selected){
           // removed = true;
           return false;
         } else {
-          console.log("return true");
           return true;
         }
       })
-
-    });
+    })
+    console.log("BEFORE:  ", facets);
+    // const updatedFacetFilters = facets.filter(facet => {
+    //   facet.options.forEach((o) => {
+    //     console.log(facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
+    //     if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
+    //       console.log("removed = true", facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
+    //       // removed = true;
+    //       return false;
+    //     } else {
+    //       console.log("return true");
+    //       return true;
+    //     }
+    //   })
+    // });
 
     // if (!removed) {
-      updatedFacetFilters.push({
-        fieldId: facetFieldId,
-        options: [
-          {matcher: Matcher.Equals, value: optionDisplayName}
-        ]
-      });
+    //   updatedFacetFilters2.push({
+    //     fieldId: facetFieldId,
+    //     options: [
+    //       {
+    //         matcher: Matcher.Equals, 
+    //         value: optionDisplayName,
+    //         displayName: optionDisplayName,
+    //         count: option
+    //       }
+    //     ]
+    //   });
     // }
-    console.log("AFTER:  ", updatedFacetFilters);
+    console.log("AFTER:  ", updatedFacetFilters2);
 
     if (updateSearchResults) {
-      handleSearch(lastSearchedTerm, updatedFacetFilters, sortBys);
+      handleSearch(lastSearchedTerm, displayableToFacets(updatedFacetFilters2), sortBys);
     }
   };
 

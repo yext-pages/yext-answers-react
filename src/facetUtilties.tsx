@@ -73,6 +73,17 @@ export const toggleFacetObject = (
   return displayableFacets;
 };
 
+export const displayableToFacets = (displayableFacets: DisplayableFacet[]) : Facet[] => {
+  let facets :Facet[] = [];
+  displayableFacets.forEach((displayFacet) => {
+    facets.push({
+      fieldId: displayFacet.fieldId,
+      options: displayFacet.options
+    })
+  })
+  return facets;
+}
+
 export const sortFacets = (facets: Facet[]) => {
   //TODO(tredshaw): how are we going to sort Facets/do we even need to anymore
   // this shoudl take Facets and return displayableFacets?
