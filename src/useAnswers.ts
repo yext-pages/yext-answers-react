@@ -140,30 +140,30 @@ export const useAnswers = () => {
     })
     // let removed = false;
     
-    const updatedFacetFilters2 = updatedFacets.filter((facet) => {
-      facet.options.forEach((option) => {
-        if(facet.fieldId == facetFieldId && option.value === optionDisplayName && option.selected){
-          // removed = true;
-          return false;
-        } else {
-          return true;
-        }
-      })
-    })
-    console.log("BEFORE:  ", facets);
-    // const updatedFacetFilters = facets.filter(facet => {
-    //   facet.options.forEach((o) => {
-    //     console.log(facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
-    //     if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
-    //       console.log("removed = true", facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
+    // const updatedFacetFilters2 = updatedFacets.filter((facet) => {
+    //   facet.options.forEach((option) => {
+    //     if(facet.fieldId == facetFieldId && option.value === optionDisplayName && option.selected){
     //       // removed = true;
     //       return false;
     //     } else {
-    //       console.log("return true");
     //       return true;
     //     }
     //   })
-    // });
+    // })
+    console.log("BEFORE:  ", facets);
+    const updatedFacetFilters = facets.filter(facet => {
+      facet.options.forEach((o) => {
+        console.log(facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
+        if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
+          console.log("removed = true", facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
+          // removed = true;
+          return false;
+        } else {
+          console.log("return true");
+          return true;
+        }
+      })
+    });
 
     // if (!removed) {
     //   updatedFacetFilters2.push({
@@ -178,10 +178,11 @@ export const useAnswers = () => {
     //     ]
     //   });
     // }
-    console.log("AFTER:  ", updatedFacetFilters2);
+    // console.log("AFTER:  ", updatedFacetFilters2);
+    console.log("AFTER:  ", updatedFacetFilters);
 
     if (updateSearchResults) {
-      handleSearch(lastSearchedTerm, displayableToFacets(updatedFacetFilters2), sortBys);
+      handleSearch(lastSearchedTerm, displayableToFacets(updatedFacets), sortBys);
     }
   };
 

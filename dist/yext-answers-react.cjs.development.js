@@ -1375,7 +1375,7 @@ var useAnswers = function useAnswers() {
 
   var toggleFacet = /*#__PURE__*/function () {
     var _ref5 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee5(facetFieldId, optionDisplayName, updateSearchResults) {
-      var updatedFacets, updatedFacetFilters2;
+      var updatedFacets, updatedFacetFilters;
       return runtime_1.wrap(function _callee5$(_context5) {
         while (1) {
           switch (_context5.prev = _context5.next) {
@@ -1393,31 +1393,32 @@ var useAnswers = function useAnswers() {
                 type: 'UPDATE_DISPLAYABLE_FACETS',
                 displayableFacets: updatedFacets
               }); // let removed = false;
-
-              updatedFacetFilters2 = updatedFacets.filter(function (facet) {
-                facet.options.forEach(function (option) {
-                  if (facet.fieldId == facetFieldId && option.value === optionDisplayName && option.selected) {
-                    // removed = true;
-                    return false;
-                  } else {
-                    return true;
-                  }
-                });
-              });
-              console.log("BEFORE:  ", facets); // const updatedFacetFilters = facets.filter(facet => {
-              //   facet.options.forEach((o) => {
-              //     console.log(facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
-              //     if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
-              //       console.log("removed = true", facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
+              // const updatedFacetFilters2 = updatedFacets.filter((facet) => {
+              //   facet.options.forEach((option) => {
+              //     if(facet.fieldId == facetFieldId && option.value === optionDisplayName && option.selected){
               //       // removed = true;
               //       return false;
               //     } else {
-              //       console.log("return true");
               //       return true;
               //     }
               //   })
-              // });
-              // if (!removed) {
+              // })
+
+              console.log("BEFORE:  ", facets);
+              updatedFacetFilters = facets.filter(function (facet) {
+                facet.options.forEach(function (o) {
+                  console.log(facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
+
+                  if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
+                    console.log("removed = true", facet.fieldId, facetFieldId, "-", o.value, optionDisplayName); // removed = true;
+
+                    return false;
+                  } else {
+                    console.log("return true");
+                    return true;
+                  }
+                });
+              }); // if (!removed) {
               //   updatedFacetFilters2.push({
               //     fieldId: facetFieldId,
               //     options: [
@@ -1430,11 +1431,12 @@ var useAnswers = function useAnswers() {
               //     ]
               //   });
               // }
+              // console.log("AFTER:  ", updatedFacetFilters2);
 
-              console.log("AFTER:  ", updatedFacetFilters2);
+              console.log("AFTER:  ", updatedFacetFilters);
 
               if (updateSearchResults) {
-                handleSearch(lastSearchedTerm, displayableToFacets(updatedFacetFilters2), sortBys);
+                handleSearch(lastSearchedTerm, displayableToFacets(updatedFacets), sortBys);
               }
 
             case 8:
