@@ -139,13 +139,13 @@ export const useAnswers = () => {
       displayableFacets: updatedFacets
     })
 
-    let removed = false;
+    // let removed = false;
     console.log("BEFORE:  ", facets);
     const updatedFacetFilters = facets.filter(facet => {
       facet.options.forEach((o) => {
         if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
           console.log("removed = true", facet.fieldId, facetFieldId,"-", o.value, optionDisplayName);
-          removed = true;
+          // removed = true;
           return false;
         } else {
           console.log("return true");
@@ -155,14 +155,14 @@ export const useAnswers = () => {
 
     });
 
-    if (!removed) {
+    // if (!removed) {
       updatedFacetFilters.push({
         fieldId: facetFieldId,
         options: [
           {matcher: Matcher.Equals, value: optionDisplayName}
         ]
       });
-    }
+    // }
     console.log("AFTER:  ", updatedFacetFilters);
 
     if (updateSearchResults) {

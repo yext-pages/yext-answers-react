@@ -1365,7 +1365,7 @@ var useAnswers = function useAnswers() {
 
   var toggleFacet = /*#__PURE__*/function () {
     var _ref5 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee5(facetFieldId, optionDisplayName, updateSearchResults) {
-      var updatedFacets, removed, updatedFacetFilters;
+      var updatedFacets, updatedFacetFilters;
       return runtime_1.wrap(function _callee5$(_context5) {
         while (1) {
           switch (_context5.prev = _context5.next) {
@@ -1382,31 +1382,29 @@ var useAnswers = function useAnswers() {
               dispatch({
                 type: 'UPDATE_DISPLAYABLE_FACETS',
                 displayableFacets: updatedFacets
-              });
-              removed = false;
+              }); // let removed = false;
+
               console.log("BEFORE:  ", facets);
               updatedFacetFilters = facets.filter(function (facet) {
                 facet.options.forEach(function (o) {
                   if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
-                    console.log("removed = true", facet.fieldId, facetFieldId, "-", o.value, optionDisplayName);
-                    removed = true;
+                    console.log("removed = true", facet.fieldId, facetFieldId, "-", o.value, optionDisplayName); // removed = true;
+
                     return false;
                   } else {
                     console.log("return true");
                     return true;
                   }
                 });
-              });
+              }); // if (!removed) {
 
-              if (!removed) {
-                updatedFacetFilters.push({
-                  fieldId: facetFieldId,
-                  options: [{
-                    matcher: answersCore.Matcher.Equals,
-                    value: optionDisplayName
-                  }]
-                });
-              }
+              updatedFacetFilters.push({
+                fieldId: facetFieldId,
+                options: [{
+                  matcher: answersCore.Matcher.Equals,
+                  value: optionDisplayName
+                }]
+              }); // }
 
               console.log("AFTER:  ", updatedFacetFilters);
 
@@ -1414,7 +1412,7 @@ var useAnswers = function useAnswers() {
                 handleSearch(lastSearchedTerm, updatedFacetFilters, sortBys);
               }
 
-            case 10:
+            case 9:
             case "end":
               return _context5.stop();
           }
