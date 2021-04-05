@@ -143,6 +143,7 @@ export const useAnswers = () => {
     console.log("BEFORE:  ", facets);
     const updatedFacetFilters = facets.filter(facet => {
       facet.options.forEach((o) => {
+        console.log(facet.fieldId, facetFieldId,"-", o.value, optionDisplayName);
         if (facet.fieldId === facetFieldId && o.value === optionDisplayName) {
           console.log("removed = true", facet.fieldId, facetFieldId,"-", o.value, optionDisplayName);
           // removed = true;
