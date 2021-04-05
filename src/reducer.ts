@@ -1,14 +1,15 @@
 import {
-  AutoCompleteResult,
+  AutocompleteResult,
   Facet,
   provideCore,
   SortBy,
   VerticalSearchResponse,
-  SimpleFilter,
+  DisplayableFacet,
 } from '@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { getFacetFilters, sortFacets } from './facetUtilties';
 import { AppliedFilter, InitialStateType } from './initialState';
+import { createFacets } from './createFacets';
 export type Action =
   | {
       type: 'SET_CONFIGURATION';
@@ -20,7 +21,7 @@ export type Action =
   | { type: 'SET_VERTICAL_RESPONSE'; response: VerticalSearchResponse }
   | {
       type: 'SET_AUTOCOMPLETE';
-      querySuggestions: AutoCompleteResult[];
+      querySuggestions: AutocompleteResult[];
       recentSearches: { query: string }[];
     }
   | { type: 'NEXT_AUTOCOMPLETE_OPTION' }
@@ -28,8 +29,9 @@ export type Action =
   | { type: 'PREVIOUS_AUTOCOMPLETE_OPTION' }
   | { type: 'APPEND_RESULTS'; results: any[] }
   | { type: 'UPDATE_SORT_BYS'; sortBys?: SortBy[] }
-  | { type: 'SIMPLE_FILTER_UPDATE'; simpleFilters?: SimpleFilter[] }
-  | { type: 'UPDATE_FACETS'; facets: Facet[] };
+  | { type: 'SIMPLE_FILTER_UPDATE'; simpleFilters?: Facet[] }
+  | { type: 'UPDATE_FACETS'; facets: Facet[] }
+  | { type: 'UPDATE_DISPLAYABLE_FACETS'; displayableFacets: DisplayableFacet[] }
 
 const reducer = (state: InitialStateType, action: Action): InitialStateType => {
   if (
@@ -85,11 +87,12 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
     case 'SET_VERTICAL_RESPONSE': {
       const { response } = action;
       const facets = (response.facets as any) as Facet[];
+      console.log("SET_VERTICAL_RESPONSE ==== ", response.facets)
       const newFacetFilters = getFacetFilters(facets);
       const facetFilters = [
         ...state.facetFilters.filter(f => {
           const matchedIndex = newFacetFilters.findIndex(
-            g => g.fieldId === f.fieldId && g.comparedValue === f.comparedValue
+            g => g.fieldId === f.fieldId && g.value === f.value
           );
           return matchedIndex === -1;
         }),
@@ -103,7 +106,7 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
       //     facetFilters.findIndex(
       //       f =>
       //         q.filter.fieldId === f.fieldId &&
-      //         q.displayValue === f.comparedValue
+      //         q.displayValue === f.value
       //     ) === -1;
 
       //   if (!isFacet) {
@@ -111,26 +114,29 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
       //   }
       // });
 
+      // TODO(tredshaw): Looking into applied filters
       facets.forEach(f => {
         f.options.forEach(o => {
-          if (o.selected === true) {
+          if (o) {
             //  Check if Facet Field Exists
             const matchedIndex = appliedFilters.findIndex(
               af => af.fieldId === f.fieldId
             );
             if (matchedIndex !== -1) {
-              appliedFilters[matchedIndex].values.push(o.displayName);
+              appliedFilters[matchedIndex].values.push(o.value.toString());
             } else {
               appliedFilters.push({
-                displayName: f.displayName,
+                displayName: f.fieldId.toString(),
                 fieldId: f.fieldId,
                 source: 'FACET',
-                values: [o.displayName],
+                values: [o.value.toString()],
               });
             }
           }
         });
       });
+
+      let returnFacets = facetSorter ? facetSorter(facets) : sortFacets(facets);
 
       return {
         ...state,
@@ -146,9 +152,12 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
         verticalresults: response.verticalResults,
         hasSearched: true,
         results: response.verticalResults.results,
-        facets: facetSorter ? facetSorter(facets) : sortFacets(facets),
+        facets: returnFacets,
+        displayableFacets: createFacets(returnFacets),
         appliedFilters,
         facetFilters,
+        locationBias: response.locationBias,
+        searchIntents: response.searchIntents,
       };
     }
     case 'SET_AUTOCOMPLETE':
@@ -242,6 +251,12 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
       return {
         ...state,
         sortBys: action.sortBys,
+      };
+    case 'UPDATE_DISPLAYABLE_FACETS':
+      const { displayableFacets } = action;
+      return {
+        ...state,
+        displayableFacets: displayableFacets,
       };
     case 'UPDATE_FACETS':
       const { facets } = action;

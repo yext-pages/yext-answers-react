@@ -12,6 +12,7 @@ export const useQueryParamManager = () => {
   });
 
   const facetFilters = getFacetFilters(state.facets);
+
   useEffect(() => {
     setQueryParams({
       query: state.lastSearchedTerm || undefined,
