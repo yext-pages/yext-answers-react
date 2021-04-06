@@ -1,10 +1,13 @@
 import {
   AnswersCore,
-  AutoCompleteResult,
+  AutocompleteResult,
   Facet,
-  SimpleFilter,
+  Filter,
   SortBy,
   VerticalResults,
+  LocationBias,
+  SearchIntent,
+  DisplayableFacet,
 } from '@yext/answers-core';
 type AutocompleteState = {
   autocompleteOptions: {
@@ -14,7 +17,7 @@ type AutocompleteState = {
     highlighted?: boolean;
   }[];
   loading: boolean;
-  querySuggestions: AutoCompleteResult[];
+  querySuggestions: AutocompleteResult[];
   recentSearches: {
     query: string;
   }[];
@@ -40,12 +43,15 @@ export type InitialStateType = {
   verticalresults?: VerticalResults;
   results: any[];
   facets: Facet[];
-  facetFilters: SimpleFilter[];
+  displayableFacets: DisplayableFacet[];
+  facetFilters: Filter[];
   appliedFilters: AppliedFilter[];
   sortBys?: SortBy[];
   autocomplete: AutocompleteState;
   debug: boolean;
   facetSorter?: (facets: Facet[]) => Facet[];
+  locationBias?: LocationBias;
+  searchIntents?: SearchIntent[];
 };
 
 export const initialState: InitialStateType = {
@@ -62,6 +68,7 @@ export const initialState: InitialStateType = {
   results: [],
   entities: [],
   facets: [],
+  displayableFacets: [],
   appliedQueryFilters: [],
   facetFilters: [],
   autocomplete: {
@@ -72,4 +79,6 @@ export const initialState: InitialStateType = {
     selectedIndex: -1,
   },
   debug: false,
+  locationBias: undefined,
+  searchIntents: [],
 };

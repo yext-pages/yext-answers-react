@@ -1,14 +1,16 @@
 import {
-  SimpleFilter,
+  Facet,
   SortBy,
   VerticalSearchResponse,
+  Matcher,
 } from '@yext/answers-core';
 import { useContext } from 'react';
 import RecentSearches from 'recent-searches';
 import { AnswersConfig } from './AnswersConfig';
 import { AppContext } from './AnswersStore';
-import { getFacetFilters, toggleFacetObject } from './facetUtilties';
+import { getSelectedFacets, toggleFacetObject, displayableToFacets } from './facetUtilties';
 import { InitialStateType } from './initialState';
+import { createFacets } from './createFacets';
 
 const recentSearchesController = new RecentSearches();
 
@@ -23,7 +25,6 @@ export const useAnswers = () => {
     verticalKey,
     results,
     core,
-    facetFilters,
   } = state;
 
   const setConfiguration = (
@@ -43,7 +44,7 @@ export const useAnswers = () => {
   ) => {
     recentSearchesController.setRecentSearch(searchTerm);
 
-    handleSearch(searchTerm, clearFacets ? undefined : facetFilters, sortBys);
+    handleSearch(searchTerm, clearFacets ? [] : facets, sortBys);
   };
 
   const chooseAutocompleteOption = (index: number) => {
@@ -57,7 +58,7 @@ export const useAnswers = () => {
 
   const handleSearch = async (
     searchTerm: string,
-    facetFilters?: SimpleFilter[],
+    facets?: Facet[],
     sortBys?: SortBy[]
   ) => {
     dispatch({
@@ -65,15 +66,30 @@ export const useAnswers = () => {
       searchTerm: searchTerm,
     });
 
+    dispatch({
+      type: 'UPDATE_FACETS',
+      facets: facets || [],
+    });
+
+    dispatch({
+      type: 'UPDATE_DISPLAYABLE_FACETS',
+      displayableFacets: createFacets(facets),
+    });
+
     try {
+      // const displayableFacets = createFacets(facets)
+      console.log("DISPLAY FACETS IN :: ", facets)
       const res: VerticalSearchResponse = await core.verticalSearch({
         query: searchTerm,
         context: {},
         verticalKey,
         retrieveFacets: true,
         sortBys,
-        facetFilters,
+        facets: facets,
       });
+      console.log("res.facets out :: ", res.facets)
+
+
       dispatch({
         type: 'SET_VERTICAL_RESPONSE',
         response: res,
@@ -93,7 +109,7 @@ export const useAnswers = () => {
       type: 'ON_SEARCH_TERM_CHANGE',
       searchTerm,
     });
-    const res = await core.verticalAutoComplete({
+    const res = await core.verticalAutocomplete({
       input: searchTerm,
       verticalKey,
     });
@@ -114,7 +130,7 @@ export const useAnswers = () => {
     });
 
     if (updateSearchResults) {
-      handleSearch(lastSearchedTerm, getFacetFilters(facets), sortBys);
+      handleSearch(lastSearchedTerm, facets, sortBys);
     }
   };
 
@@ -128,35 +144,23 @@ export const useAnswers = () => {
       facetFieldId,
       optionDisplayName
     );
-
     dispatch({
       type: 'UPDATE_FACETS',
-      facets: updatedFacets,
+      facets:  displayableToFacets(updatedFacets),
     });
 
-    console.log(facetFilters);
-    let removed = false;
-    const updatedFacetFilters = facetFilters.filter(f => {
-      if (f.fieldId === facetFieldId && f.comparedValue === optionDisplayName) {
-        removed = true;
-        return false;
-      } else {
-        return true;
-      }
-    });
-
-    if (!removed) {
-      updatedFacetFilters.push({
-        fieldId: facetFieldId,
-        comparator: '$eq',
-        comparedValue: optionDisplayName,
-      });
-    }
-
-    console.log(updatedFacetFilters);
-
+    dispatch({
+      type: 'UPDATE_DISPLAYABLE_FACETS',
+      displayableFacets: updatedFacets
+    })
+    // let removed = false;
+    
     if (updateSearchResults) {
-      handleSearch(lastSearchedTerm, updatedFacetFilters, sortBys);
+      const regularFacets = displayableToFacets(updatedFacets);
+      console.log(regularFacets)
+
+      //TODO(tredshaw): this sets all facets to selected = true
+      handleSearch(lastSearchedTerm, regularFacets, sortBys);
     }
   };
 
@@ -166,7 +170,7 @@ export const useAnswers = () => {
       context: {},
       verticalKey,
       retrieveFacets: true,
-      facetFilters: getFacetFilters(facets),
+      facets: getSelectedFacets(facets),  // this needs to be only the selected facets
       offset: results.length,
     });
 
@@ -185,10 +189,11 @@ export const useAnswers = () => {
   };
 
   const clearSearch = () => {
+    const displayFacets = createFacets(facets)
     dispatch({ type: 'ON_SEARCH_TERM_CHANGE', searchTerm: '' });
     dispatch({
       type: 'UPDATE_FACETS',
-      facets: facets.map(f => {
+      facets: displayFacets.map(f => {
         return {
           ...f,
           options: f.options.map(o => {
@@ -206,24 +211,21 @@ export const useAnswers = () => {
 
   const simpleFilter = async (
     fieldId: string,
-    comparator: string,
-    comparedValue = 'test'
+    value = 'test'
   ) => {
-      let simpleFilters = [];
-      simpleFilters.push({
+      let facets: Facet[] = [];
+      facets.push({
         fieldId: fieldId,
-        comparator: comparator ? comparator : '$eq',
-        comparedValue: comparedValue,
+        options: [
+          {matcher: Matcher.Equals, value: value}
+        ]
       });
-
-    // TODO(tredshaw):
-        // is dispatch from the react event system? yes
         dispatch({
           type: 'SIMPLE_FILTER_UPDATE',
-          simpleFilters: simpleFilters,
+          simpleFilters: facets,
         });
 
-      handleSearch(lastSearchedTerm, simpleFilters, undefined);
+      handleSearch(lastSearchedTerm, facets, undefined);
   };
 
   return {
