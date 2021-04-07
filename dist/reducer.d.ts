@@ -1,4 +1,4 @@
-import { AutocompleteResult, Facet, SortBy, VerticalSearchResponse, DisplayableFacet } from '@yext/answers-core';
+import { AutocompleteResult, Facet, SortBy, VerticalSearchResponse, DisplayableFacet, LocationBias } from '@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { InitialStateType } from './initialState';
 export declare type Action = {
@@ -42,6 +42,9 @@ export declare type Action = {
 } | {
     type: 'UPDATE_DISPLAYABLE_FACETS';
     displayableFacets: DisplayableFacet[];
+} | {
+    type: 'UPDATE_LOCATION_BIAS';
+    locationBias: LocationBias;
 };
 declare const reducer: (state: InitialStateType, action: Action) => InitialStateType;
 export default reducer;

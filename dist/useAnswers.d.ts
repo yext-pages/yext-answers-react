@@ -1,10 +1,11 @@
-import { SortBy } from '@yext/answers-core';
+import { SortBy, LocationBias } from '@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { InitialStateType } from './initialState';
 export declare const useAnswers: () => {
     state: InitialStateType;
     actions: {
         runSearch: (searchTerm?: string, clearFacets?: boolean) => Promise<void>;
+        handleLocationBiasSearch: (searchTerm: string, locationBias: LocationBias) => Promise<void>;
         handleSearchTermChange: (searchTerm?: string) => Promise<void>;
         chooseAutocompleteOption: (index: number) => void;
         toggleFacet: (facetFieldId: string, optionDisplayName: string, updateSearchResults?: boolean) => Promise<void>;

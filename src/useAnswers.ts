@@ -3,6 +3,8 @@ import {
   SortBy,
   VerticalSearchResponse,
   Matcher,
+  LocationBias,
+  LatLong,
 } from '@yext/answers-core';
 import { useContext } from 'react';
 import RecentSearches from 'recent-searches';
@@ -88,6 +90,59 @@ export const useAnswers = () => {
         facets: facets,
       });
       console.log("res.facets out :: ", res.facets)
+
+
+      dispatch({
+        type: 'SET_VERTICAL_RESPONSE',
+        response: res,
+      });
+    } catch (error) {
+      dispatch({
+        type: 'SET_ERROR',
+        error,
+      });
+    }
+  };
+
+  const handleLocationBiasSearch = async (
+    searchTerm: string,
+    locationBias: LocationBias,
+  ) => {
+    dispatch({
+      type: 'PREPARE_FOR_SEARCH',
+      searchTerm: searchTerm,
+    });
+
+    dispatch({
+      type: 'UPDATE_FACETS',
+      facets: facets || [],
+    });
+
+    dispatch({
+      type: 'UPDATE_DISPLAYABLE_FACETS',
+      displayableFacets: createFacets(facets),
+    });
+
+    dispatch({
+      type: 'UPDATE_LOCATION_BIAS',
+      locationBias: locationBias,
+    });
+
+    try {
+      const location : LatLong = {
+        latitude: locationBias.latitude,
+        longitude: locationBias.longitude
+      }
+
+      const res: VerticalSearchResponse = await core.verticalSearch({
+        query: searchTerm,
+        context: {},
+        verticalKey,
+        retrieveFacets: true,
+        sortBys,
+        facets: facets,
+        location: location
+      });
 
 
       dispatch({
@@ -232,6 +287,7 @@ export const useAnswers = () => {
     state,
     actions: {
       runSearch,
+      handleLocationBiasSearch,
       handleSearchTermChange,
       chooseAutocompleteOption,
       toggleFacet,

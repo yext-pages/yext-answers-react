@@ -5,6 +5,7 @@ import {
   SortBy,
   VerticalSearchResponse,
   DisplayableFacet,
+  LocationBias,
 } from '@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { getFacetFilters, sortFacets } from './facetUtilties';
@@ -32,6 +33,7 @@ export type Action =
   | { type: 'SIMPLE_FILTER_UPDATE'; simpleFilters?: Facet[] }
   | { type: 'UPDATE_FACETS'; facets: Facet[] }
   | { type: 'UPDATE_DISPLAYABLE_FACETS'; displayableFacets: DisplayableFacet[] }
+  | { type: 'UPDATE_LOCATION_BIAS'; locationBias: LocationBias }
 
 const reducer = (state: InitialStateType, action: Action): InitialStateType => {
   if (
@@ -240,6 +242,12 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
         visibleSearchTerm: newVisibleSearchTerm,
       };
 
+    case 'UPDATE_LOCATION_BIAS':
+      const { locationBias } = action;
+      return {
+        ...state,
+        locationBias: locationBias
+      };
     case 'APPEND_RESULTS':
       return {
         ...state,
