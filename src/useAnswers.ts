@@ -80,7 +80,6 @@ export const useAnswers = () => {
 
     try {
       // const displayableFacets = createFacets(facets)
-      console.log("DISPLAY FACETS IN :: ", facets)
       const res: VerticalSearchResponse = await core.verticalSearch({
         query: searchTerm,
         context: {},
@@ -89,7 +88,6 @@ export const useAnswers = () => {
         sortBys,
         facets: facets,
       });
-      console.log("res.facets out :: ", res.facets)
 
 
       dispatch({
@@ -104,15 +102,6 @@ export const useAnswers = () => {
     }
   };
 
-  const updateLocationBias = async (
-    locationBias: LocationBias
-  ) => {
-    dispatch({
-      type: 'UPDATE_LOCATION_BIAS',
-      locationBias: locationBias,
-    });
-  }
-
   const handleLocationBiasSearch = async (
     searchTerm: string,
     locationBias: LocationBias,
@@ -120,16 +109,6 @@ export const useAnswers = () => {
     dispatch({
       type: 'PREPARE_FOR_SEARCH',
       searchTerm: searchTerm,
-    });
-
-    dispatch({
-      type: 'UPDATE_FACETS',
-      facets: facets || [],
-    });
-
-    dispatch({
-      type: 'UPDATE_DISPLAYABLE_FACETS',
-      displayableFacets: createFacets(facets),
     });
 
     try {
@@ -301,8 +280,7 @@ export const useAnswers = () => {
       nextAutocompleteOption,
       prevAutocompleteOption,
       clearSearch,
-      simpleFilter,
-      updateLocationBias
+      simpleFilter
     },
   };
 };
