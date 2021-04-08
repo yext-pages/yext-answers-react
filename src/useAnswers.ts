@@ -132,11 +132,6 @@ export const useAnswers = () => {
       displayableFacets: createFacets(facets),
     });
 
-    dispatch({
-      type: 'UPDATE_LOCATION_BIAS',
-      locationBias: locationBias,
-    });
-
     try {
       const location : LatLong = {
         latitude: locationBias.latitude,

@@ -1370,16 +1370,12 @@ var useAnswers = function useAnswers() {
                 type: 'UPDATE_DISPLAYABLE_FACETS',
                 displayableFacets: createFacets(facets)
               });
-              dispatch({
-                type: 'UPDATE_LOCATION_BIAS',
-                locationBias: locationBias
-              });
-              _context4.prev = 4;
+              _context4.prev = 3;
               location = {
                 latitude: locationBias.latitude,
                 longitude: locationBias.longitude
               };
-              _context4.next = 8;
+              _context4.next = 7;
               return core.verticalSearch({
                 query: searchTerm,
                 context: {},
@@ -1390,29 +1386,29 @@ var useAnswers = function useAnswers() {
                 location: location
               });
 
-            case 8:
+            case 7:
               res = _context4.sent;
               dispatch({
                 type: 'SET_VERTICAL_RESPONSE',
                 response: res
               });
-              _context4.next = 15;
+              _context4.next = 14;
               break;
 
-            case 12:
-              _context4.prev = 12;
-              _context4.t0 = _context4["catch"](4);
+            case 11:
+              _context4.prev = 11;
+              _context4.t0 = _context4["catch"](3);
               dispatch({
                 type: 'SET_ERROR',
                 error: _context4.t0
               });
 
-            case 15:
+            case 14:
             case "end":
               return _context4.stop();
           }
         }
-      }, _callee4, null, [[4, 12]]);
+      }, _callee4, null, [[3, 11]]);
     }));
 
     return function handleLocationBiasSearch(_x7, _x8) {
