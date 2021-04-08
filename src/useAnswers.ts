@@ -86,7 +86,7 @@ export const useAnswers = () => {
         verticalKey,
         retrieveFacets: true,
         sortBys,
-        facets: facets,
+        facets: displayableToSelectedFacets(createFacets(facets)),
       });
 
 

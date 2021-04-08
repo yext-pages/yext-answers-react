@@ -1305,7 +1305,7 @@ var useAnswers = function useAnswers() {
                 verticalKey: verticalKey,
                 retrieveFacets: true,
                 sortBys: sortBys,
-                facets: facets
+                facets: displayableToSelectedFacets(createFacets(facets))
               });
 
             case 6:
