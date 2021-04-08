@@ -171,6 +171,20 @@ var toggleFacetObject = function toggleFacetObject(facets, facetFieldId, optionD
   });
   return filtered;
 };
+var displayableToSelectedFacets = function displayableToSelectedFacets(displayableFacets) {
+  var selectedFacets = displayableFacets.filter(function (facet) {
+    var filter = facet.options.some(function (option) {
+      return option.selected;
+    });
+    return filter;
+  });
+  selectedFacets.forEach(function (facet) {
+    facet.options = facet.options.filter(function (option) {
+      return option.selected;
+    });
+  });
+  return displayableToFacets(selectedFacets);
+};
 var displayableToFacets = function displayableToFacets(displayableFacets) {
   var facets = [];
   displayableFacets.forEach(function (displayFacet) {
@@ -1325,7 +1339,7 @@ var useAnswers = function useAnswers() {
   }();
 
   var handleLocationBiasSearch = /*#__PURE__*/function () {
-    var _ref3 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(searchTerm, locationBias) {
+    var _ref3 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(searchTerm, locationBias, displayableFacets) {
       var location, res;
       return runtime_1.wrap(function _callee3$(_context3) {
         while (1) {
@@ -1347,7 +1361,7 @@ var useAnswers = function useAnswers() {
                 verticalKey: verticalKey,
                 retrieveFacets: true,
                 sortBys: sortBys,
-                facets: facets,
+                facets: displayableToSelectedFacets(displayableFacets),
                 location: location
               });
 
@@ -1376,7 +1390,7 @@ var useAnswers = function useAnswers() {
       }, _callee3, null, [[1, 9]]);
     }));
 
-    return function handleLocationBiasSearch(_x6, _x7) {
+    return function handleLocationBiasSearch(_x6, _x7, _x8) {
       return _ref3.apply(this, arguments);
     };
   }();
@@ -1418,7 +1432,7 @@ var useAnswers = function useAnswers() {
       }, _callee4);
     }));
 
-    return function handleSearchTermChange(_x8) {
+    return function handleSearchTermChange(_x9) {
       return _ref4.apply(this, arguments);
     };
   }();
@@ -1450,7 +1464,7 @@ var useAnswers = function useAnswers() {
       }, _callee5);
     }));
 
-    return function updateSortBys(_x9, _x10) {
+    return function updateSortBys(_x10, _x11) {
       return _ref5.apply(this, arguments);
     };
   }();
@@ -1491,7 +1505,7 @@ var useAnswers = function useAnswers() {
       }, _callee6);
     }));
 
-    return function toggleFacet(_x11, _x12, _x13) {
+    return function toggleFacet(_x12, _x13, _x14) {
       return _ref6.apply(this, arguments);
     };
   }();
@@ -1603,7 +1617,7 @@ var useAnswers = function useAnswers() {
       }, _callee8);
     }));
 
-    return function simpleFilter(_x14, _x15) {
+    return function simpleFilter(_x15, _x16) {
       return _ref8.apply(this, arguments);
     };
   }();

@@ -84,7 +84,19 @@ export const toggleFacetObject = (
 
   return filtered;
 };
+export const displayableToSelectedFacets = (displayableFacets: DisplayableFacet[]): Facet[] => {
 
+  const selectedFacets = displayableFacets.filter(facet => {
+    let filter = facet.options.some((option) => option.selected)
+    return filter;    
+  })
+
+  selectedFacets.forEach(facet => {
+    facet.options = facet.options.filter(option => option.selected)
+    })
+
+  return displayableToFacets(selectedFacets);
+}
 export const displayableToFacets = (displayableFacets: DisplayableFacet[]) : Facet[] => {
   let facets :Facet[] = [];
   displayableFacets.forEach((displayFacet) => {

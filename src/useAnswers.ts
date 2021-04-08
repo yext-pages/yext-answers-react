@@ -5,12 +5,13 @@ import {
   Matcher,
   LocationBias,
   LatLong,
+  DisplayableFacet,
 } from '@yext/answers-core';
 import { useContext } from 'react';
 import RecentSearches from 'recent-searches';
 import { AnswersConfig } from './AnswersConfig';
 import { AppContext } from './AnswersStore';
-import { getSelectedFacets, toggleFacetObject, displayableToFacets } from './facetUtilties';
+import { getSelectedFacets, toggleFacetObject, displayableToFacets, displayableToSelectedFacets } from './facetUtilties';
 import { InitialStateType } from './initialState';
 import { createFacets } from './createFacets';
 
@@ -79,7 +80,6 @@ export const useAnswers = () => {
     });
 
     try {
-      // const displayableFacets = createFacets(facets)
       const res: VerticalSearchResponse = await core.verticalSearch({
         query: searchTerm,
         context: {},
@@ -105,6 +105,7 @@ export const useAnswers = () => {
   const handleLocationBiasSearch = async (
     searchTerm: string,
     locationBias: LocationBias,
+    displayableFacets: DisplayableFacet[],
   ) => {
     dispatch({
       type: 'PREPARE_FOR_SEARCH',
@@ -123,7 +124,7 @@ export const useAnswers = () => {
         verticalKey,
         retrieveFacets: true,
         sortBys,
-        facets: facets,
+        facets: displayableToSelectedFacets(displayableFacets),
         location: location
       });
 
