@@ -16,5 +16,6 @@ export declare const useAnswers: () => {
         prevAutocompleteOption: () => void;
         clearSearch: () => void;
         simpleFilter: (fieldId: string, value?: string) => Promise<void>;
+        updateLocationBias: (locationBias: LocationBias) => Promise<void>;
     };
 };

@@ -104,6 +104,15 @@ export const useAnswers = () => {
     }
   };
 
+  const updateLocationBias = async (
+    locationBias: LocationBias
+  ) => {
+    dispatch({
+      type: 'UPDATE_LOCATION_BIAS',
+      locationBias: locationBias,
+    });
+  }
+
   const handleLocationBiasSearch = async (
     searchTerm: string,
     locationBias: LocationBias,
@@ -298,6 +307,7 @@ export const useAnswers = () => {
       prevAutocompleteOption,
       clearSearch,
       simpleFilter,
+      updateLocationBias
     },
   };
 };

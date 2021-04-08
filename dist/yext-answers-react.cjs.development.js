@@ -1327,12 +1327,36 @@ var useAnswers = function useAnswers() {
     };
   }();
 
-  var handleLocationBiasSearch = /*#__PURE__*/function () {
-    var _ref3 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(searchTerm, locationBias) {
-      var location, res;
+  var updateLocationBias = /*#__PURE__*/function () {
+    var _ref3 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(locationBias) {
       return runtime_1.wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
+            case 0:
+              dispatch({
+                type: 'UPDATE_LOCATION_BIAS',
+                locationBias: locationBias
+              });
+
+            case 1:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _callee3);
+    }));
+
+    return function updateLocationBias(_x6) {
+      return _ref3.apply(this, arguments);
+    };
+  }();
+
+  var handleLocationBiasSearch = /*#__PURE__*/function () {
+    var _ref4 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee4(searchTerm, locationBias) {
+      var location, res;
+      return runtime_1.wrap(function _callee4$(_context4) {
+        while (1) {
+          switch (_context4.prev = _context4.next) {
             case 0:
               dispatch({
                 type: 'PREPARE_FOR_SEARCH',
@@ -1350,12 +1374,12 @@ var useAnswers = function useAnswers() {
                 type: 'UPDATE_LOCATION_BIAS',
                 locationBias: locationBias
               });
-              _context3.prev = 4;
+              _context4.prev = 4;
               location = {
                 latitude: locationBias.latitude,
                 longitude: locationBias.longitude
               };
-              _context3.next = 8;
+              _context4.next = 8;
               return core.verticalSearch({
                 query: searchTerm,
                 context: {},
@@ -1367,41 +1391,41 @@ var useAnswers = function useAnswers() {
               });
 
             case 8:
-              res = _context3.sent;
+              res = _context4.sent;
               dispatch({
                 type: 'SET_VERTICAL_RESPONSE',
                 response: res
               });
-              _context3.next = 15;
+              _context4.next = 15;
               break;
 
             case 12:
-              _context3.prev = 12;
-              _context3.t0 = _context3["catch"](4);
+              _context4.prev = 12;
+              _context4.t0 = _context4["catch"](4);
               dispatch({
                 type: 'SET_ERROR',
-                error: _context3.t0
+                error: _context4.t0
               });
 
             case 15:
             case "end":
-              return _context3.stop();
+              return _context4.stop();
           }
         }
-      }, _callee3, null, [[4, 12]]);
+      }, _callee4, null, [[4, 12]]);
     }));
 
-    return function handleLocationBiasSearch(_x6, _x7) {
-      return _ref3.apply(this, arguments);
+    return function handleLocationBiasSearch(_x7, _x8) {
+      return _ref4.apply(this, arguments);
     };
   }();
 
   var handleSearchTermChange = /*#__PURE__*/function () {
-    var _ref4 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee4(searchTerm) {
+    var _ref5 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee5(searchTerm) {
       var res;
-      return runtime_1.wrap(function _callee4$(_context4) {
+      return runtime_1.wrap(function _callee5$(_context5) {
         while (1) {
-          switch (_context4.prev = _context4.next) {
+          switch (_context5.prev = _context5.next) {
             case 0:
               if (searchTerm === void 0) {
                 searchTerm = visibleSearchTerm;
@@ -1411,14 +1435,14 @@ var useAnswers = function useAnswers() {
                 type: 'ON_SEARCH_TERM_CHANGE',
                 searchTerm: searchTerm
               });
-              _context4.next = 4;
+              _context5.next = 4;
               return core.verticalAutocomplete({
                 input: searchTerm,
                 verticalKey: verticalKey
               });
 
             case 4:
-              res = _context4.sent;
+              res = _context5.sent;
               dispatch({
                 type: 'SET_AUTOCOMPLETE',
                 querySuggestions: res.results,
@@ -1427,22 +1451,22 @@ var useAnswers = function useAnswers() {
 
             case 6:
             case "end":
-              return _context4.stop();
+              return _context5.stop();
           }
         }
-      }, _callee4);
+      }, _callee5);
     }));
 
-    return function handleSearchTermChange(_x8) {
-      return _ref4.apply(this, arguments);
+    return function handleSearchTermChange(_x9) {
+      return _ref5.apply(this, arguments);
     };
   }();
 
   var updateSortBys = /*#__PURE__*/function () {
-    var _ref5 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee5(sortBys, updateSearchResults) {
-      return runtime_1.wrap(function _callee5$(_context5) {
+    var _ref6 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee6(sortBys, updateSearchResults) {
+      return runtime_1.wrap(function _callee6$(_context6) {
         while (1) {
-          switch (_context5.prev = _context5.next) {
+          switch (_context6.prev = _context6.next) {
             case 0:
               if (updateSearchResults === void 0) {
                 updateSearchResults = true;
@@ -1459,23 +1483,23 @@ var useAnswers = function useAnswers() {
 
             case 3:
             case "end":
-              return _context5.stop();
+              return _context6.stop();
           }
         }
-      }, _callee5);
+      }, _callee6);
     }));
 
-    return function updateSortBys(_x9, _x10) {
-      return _ref5.apply(this, arguments);
+    return function updateSortBys(_x10, _x11) {
+      return _ref6.apply(this, arguments);
     };
   }();
 
   var toggleFacet = /*#__PURE__*/function () {
-    var _ref6 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee6(facetFieldId, optionDisplayName, updateSearchResults) {
+    var _ref7 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee7(facetFieldId, optionDisplayName, updateSearchResults) {
       var updatedFacets, regularFacets;
-      return runtime_1.wrap(function _callee6$(_context6) {
+      return runtime_1.wrap(function _callee7$(_context7) {
         while (1) {
-          switch (_context6.prev = _context6.next) {
+          switch (_context7.prev = _context7.next) {
             case 0:
               if (updateSearchResults === void 0) {
                 updateSearchResults = true;
@@ -1500,25 +1524,25 @@ var useAnswers = function useAnswers() {
 
             case 5:
             case "end":
-              return _context6.stop();
+              return _context7.stop();
           }
         }
-      }, _callee6);
+      }, _callee7);
     }));
 
-    return function toggleFacet(_x11, _x12, _x13) {
-      return _ref6.apply(this, arguments);
+    return function toggleFacet(_x12, _x13, _x14) {
+      return _ref7.apply(this, arguments);
     };
   }();
 
   var loadMore = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee7() {
+    var _ref8 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee8() {
       var res;
-      return runtime_1.wrap(function _callee7$(_context7) {
+      return runtime_1.wrap(function _callee8$(_context8) {
         while (1) {
-          switch (_context7.prev = _context7.next) {
+          switch (_context8.prev = _context8.next) {
             case 0:
-              _context7.next = 2;
+              _context8.next = 2;
               return core.verticalSearch({
                 query: lastSearchedTerm,
                 context: {},
@@ -1529,7 +1553,7 @@ var useAnswers = function useAnswers() {
               });
 
             case 2:
-              res = _context7.sent;
+              res = _context8.sent;
               dispatch({
                 type: 'APPEND_RESULTS',
                 results: res.verticalResults.results
@@ -1537,14 +1561,14 @@ var useAnswers = function useAnswers() {
 
             case 4:
             case "end":
-              return _context7.stop();
+              return _context8.stop();
           }
         }
-      }, _callee7);
+      }, _callee8);
     }));
 
     return function loadMore() {
-      return _ref7.apply(this, arguments);
+      return _ref8.apply(this, arguments);
     };
   }();
 
@@ -1586,11 +1610,11 @@ var useAnswers = function useAnswers() {
   };
 
   var simpleFilter = /*#__PURE__*/function () {
-    var _ref8 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee8(fieldId, value) {
+    var _ref9 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee9(fieldId, value) {
       var facets;
-      return runtime_1.wrap(function _callee8$(_context8) {
+      return runtime_1.wrap(function _callee9$(_context9) {
         while (1) {
-          switch (_context8.prev = _context8.next) {
+          switch (_context9.prev = _context9.next) {
             case 0:
               if (value === void 0) {
                 value = 'test';
@@ -1612,14 +1636,14 @@ var useAnswers = function useAnswers() {
 
             case 5:
             case "end":
-              return _context8.stop();
+              return _context9.stop();
           }
         }
-      }, _callee8);
+      }, _callee9);
     }));
 
-    return function simpleFilter(_x14, _x15) {
-      return _ref8.apply(this, arguments);
+    return function simpleFilter(_x15, _x16) {
+      return _ref9.apply(this, arguments);
     };
   }();
 
@@ -1637,7 +1661,8 @@ var useAnswers = function useAnswers() {
       nextAutocompleteOption: nextAutocompleteOption,
       prevAutocompleteOption: prevAutocompleteOption,
       clearSearch: clearSearch,
-      simpleFilter: simpleFilter
+      simpleFilter: simpleFilter,
+      updateLocationBias: updateLocationBias
     }
   };
 };
