@@ -8,4 +8,5 @@ export type AnswersConfig = {
   runSearchOnLoad?: boolean;
   facetSorter?: (facets: Facet[]) => Facet[];
   debug?: boolean;
+  endpoints: any;
 };
