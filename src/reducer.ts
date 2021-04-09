@@ -150,7 +150,7 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
         appliedFilters,
         facetFilters,
         locationBias: response.locationBias,
-        searchIntents: response.searchIntents
+        searchIntents: response.searchIntents,
       };
     }
     case 'SET_AUTOCOMPLETE':

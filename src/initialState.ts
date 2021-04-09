@@ -6,7 +6,7 @@ import {
   SortBy,
   VerticalResults,
   LocationBias,
-  SearchIntent
+  SearchIntent,
 } from '@yext/answers-core';
 type AutocompleteState = {
   autocompleteOptions: {
@@ -77,5 +77,5 @@ export const initialState: InitialStateType = {
   },
   debug: false,
   locationBias: undefined,
-  searchIntents: []
+  searchIntents: [],
 };

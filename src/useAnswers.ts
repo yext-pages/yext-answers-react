@@ -209,21 +209,21 @@ export const useAnswers = () => {
     comparator: string,
     comparedValue = 'test'
   ) => {
-      let simpleFilters = [];
-      simpleFilters.push({
-        fieldId: fieldId,
-        comparator: comparator ? comparator : '$eq',
-        comparedValue: comparedValue,
-      });
+    let simpleFilters = [];
+    simpleFilters.push({
+      fieldId: fieldId,
+      comparator: comparator ? comparator : '$eq',
+      comparedValue: comparedValue,
+    });
 
     // TODO(tredshaw):
-        // is dispatch from the react event system? yes
-        dispatch({
-          type: 'SIMPLE_FILTER_UPDATE',
-          simpleFilters: simpleFilters,
-        });
+    // is dispatch from the react event system? yes
+    dispatch({
+      type: 'SIMPLE_FILTER_UPDATE',
+      simpleFilters: simpleFilters,
+    });
 
-      handleSearch(lastSearchedTerm, simpleFilters, undefined);
+    handleSearch(lastSearchedTerm, simpleFilters, undefined);
   };
 
   return {
