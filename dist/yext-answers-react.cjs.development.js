@@ -141,11 +141,6 @@ var getFacetFilters = function getFacetFilters(facets) {
     }));
   }).flat();
 };
-var getSelectedFacets = function getSelectedFacets(facets) {
-  console.log(facets);
-  console.log("getSelectedFacets");
-  return [];
-};
 var toggleFacetObject = function toggleFacetObject(facets, facetFieldId, optionDisplayName) {
   var updatedFacets = [].concat(facets);
   var displayableFacets = createFacets(updatedFacets);
@@ -1511,7 +1506,7 @@ var useAnswers = function useAnswers() {
   }();
 
   var loadMore = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee7() {
+    var _ref7 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee7(facets) {
       var res;
       return runtime_1.wrap(function _callee7$(_context7) {
         while (1) {
@@ -1523,7 +1518,7 @@ var useAnswers = function useAnswers() {
                 context: {},
                 verticalKey: verticalKey,
                 retrieveFacets: true,
-                facets: getSelectedFacets(facets),
+                facets: facets,
                 offset: results.length
               });
 
@@ -1542,7 +1537,7 @@ var useAnswers = function useAnswers() {
       }, _callee7);
     }));
 
-    return function loadMore() {
+    return function loadMore(_x15) {
       return _ref7.apply(this, arguments);
     };
   }();
@@ -1617,7 +1612,7 @@ var useAnswers = function useAnswers() {
       }, _callee8);
     }));
 
-    return function simpleFilter(_x15, _x16) {
+    return function simpleFilter(_x16, _x17) {
       return _ref8.apply(this, arguments);
     };
   }();
