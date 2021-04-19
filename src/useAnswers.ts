@@ -207,14 +207,14 @@ export const useAnswers = () => {
     }
   };
 
-  const loadMore = async (facets?: Facet[]) => {
+  const loadMore = async (displayableFacets: DisplayableFacet[]) => {
     const res = await core.verticalSearch({
       query: lastSearchedTerm,
       context: {},
       verticalKey,
       retrieveFacets: true,
-      facets: facets,  // this needs to be only the selected facets
-      offset: results.length + 1,
+      facets: displayableToSelectedFacets(displayableFacets),
+      offset: results.length,
     });
 
     dispatch({

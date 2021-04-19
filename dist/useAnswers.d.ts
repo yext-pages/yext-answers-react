@@ -1,4 +1,4 @@
-import { Facet, SortBy, LocationBias, DisplayableFacet } from '@yext/answers-core';
+import { SortBy, LocationBias, DisplayableFacet } from '@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { InitialStateType } from './initialState';
 export declare const useAnswers: () => {
@@ -9,7 +9,7 @@ export declare const useAnswers: () => {
         handleSearchTermChange: (searchTerm?: string) => Promise<void>;
         chooseAutocompleteOption: (index: number) => void;
         toggleFacet: (facetFieldId: string, optionDisplayName: string, updateSearchResults?: boolean) => Promise<void>;
-        loadMore: (facets?: Facet[] | undefined) => Promise<void>;
+        loadMore: (displayableFacets: DisplayableFacet[]) => Promise<void>;
         updateSortBys: (sortBys: SortBy[] | undefined, updateSearchResults?: boolean) => Promise<void>;
         setConfiguration: (config: AnswersConfig, initialState: InitialStateType) => void;
         nextAutocompleteOption: () => void;

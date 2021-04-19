@@ -421,6 +421,12 @@ var reducer = function reducer(state, action) {
         displayableFacets: displayableFacets
       });
 
+    case 'UPDATE_APPLIED_QUERY_FILTERS':
+      var appliedQueryFilters = action.appliedQueryFilters;
+      return _extends({}, state, {
+        appliedQueryFilters: appliedQueryFilters
+      });
+
     case 'UPDATE_FACETS':
       var facets = action.facets;
       return _extends({}, state, {
@@ -1306,26 +1312,30 @@ var useAnswers = function useAnswers() {
             case 6:
               res = _context2.sent;
               dispatch({
+                type: 'UPDATE_APPLIED_QUERY_FILTERS',
+                appliedQueryFilters: res.verticalResults.appliedQueryFilters || []
+              });
+              dispatch({
                 type: 'SET_VERTICAL_RESPONSE',
                 response: res
               });
-              _context2.next = 13;
+              _context2.next = 14;
               break;
 
-            case 10:
-              _context2.prev = 10;
+            case 11:
+              _context2.prev = 11;
               _context2.t0 = _context2["catch"](3);
               dispatch({
                 type: 'SET_ERROR',
                 error: _context2.t0
               });
 
-            case 13:
+            case 14:
             case "end":
               return _context2.stop();
           }
         }
-      }, _callee2, null, [[3, 10]]);
+      }, _callee2, null, [[3, 11]]);
     }));
 
     return function handleSearch(_x3, _x4, _x5) {
@@ -1506,7 +1516,7 @@ var useAnswers = function useAnswers() {
   }();
 
   var loadMore = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee7(facets) {
+    var _ref7 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee7(displayableFacets) {
       var res;
       return runtime_1.wrap(function _callee7$(_context7) {
         while (1) {
@@ -1518,7 +1528,7 @@ var useAnswers = function useAnswers() {
                 context: {},
                 verticalKey: verticalKey,
                 retrieveFacets: true,
-                facets: facets,
+                facets: displayableToSelectedFacets(displayableFacets),
                 offset: results.length
               });
 

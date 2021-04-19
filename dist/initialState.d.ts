@@ -1,4 +1,4 @@
-import { AnswersCore, AutocompleteResult, Facet, Filter, SortBy, VerticalResults, LocationBias, SearchIntent, DisplayableFacet } from '@yext/answers-core';
+import { AnswersCore, AutocompleteResult, Facet, Filter, SortBy, VerticalResults, LocationBias, SearchIntent, DisplayableFacet, AppliedQueryFilter } from '@yext/answers-core';
 declare type AutocompleteState = {
     autocompleteOptions: {
         value: string;
@@ -40,6 +40,7 @@ export declare type InitialStateType = {
     facetSorter?: (facets: Facet[]) => Facet[];
     locationBias?: LocationBias;
     searchIntents?: SearchIntent[];
+    appliedQueryFilters?: AppliedQueryFilter[];
 };
 export declare const initialState: InitialStateType;
 export {};
