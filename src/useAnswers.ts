@@ -207,13 +207,20 @@ export const useAnswers = () => {
     }
   };
 
-  const loadMore = async (displayableFacets: DisplayableFacet[]) => {
-    const res = await core.verticalSearch({
+  const loadMore = async (facets: Facet[]) => {
+
+    // do we need this?
+    dispatch({
+      type: 'UPDATE_FACETS',
+      facets: facets || [],
+    });
+
+    const res: VerticalSearchResponse = await core.verticalSearch({
       query: lastSearchedTerm,
       context: {},
       verticalKey,
       retrieveFacets: true,
-      facets: displayableToSelectedFacets(displayableFacets),
+      facets: displayableToSelectedFacets(createFacets(facets)),
       offset: results.length,
     });
 

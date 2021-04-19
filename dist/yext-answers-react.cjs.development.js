@@ -1516,30 +1516,35 @@ var useAnswers = function useAnswers() {
   }();
 
   var loadMore = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee7(displayableFacets) {
+    var _ref7 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee7(facets) {
       var res;
       return runtime_1.wrap(function _callee7$(_context7) {
         while (1) {
           switch (_context7.prev = _context7.next) {
             case 0:
-              _context7.next = 2;
+              // do we need this?
+              dispatch({
+                type: 'UPDATE_FACETS',
+                facets: facets || []
+              });
+              _context7.next = 3;
               return core.verticalSearch({
                 query: lastSearchedTerm,
                 context: {},
                 verticalKey: verticalKey,
                 retrieveFacets: true,
-                facets: displayableToSelectedFacets(displayableFacets),
+                facets: displayableToSelectedFacets(createFacets(facets)),
                 offset: results.length
               });
 
-            case 2:
+            case 3:
               res = _context7.sent;
               dispatch({
                 type: 'APPEND_RESULTS',
                 results: res.verticalResults.results
               });
 
-            case 4:
+            case 5:
             case "end":
               return _context7.stop();
           }
