@@ -62,7 +62,7 @@ export const useAnswers = () => {
   const handleSearch = async (
     searchTerm: string,
     facets?: Facet[],
-    sortBys?: SortBy[]
+    sortBys?: SortBy[],
   ) => {
     dispatch({
       type: 'PREPARE_FOR_SEARCH',
@@ -89,6 +89,10 @@ export const useAnswers = () => {
         facets: displayableToSelectedFacets(createFacets(facets)),
       });
 
+      dispatch({
+        type: 'UPDATE_APPLIED_QUERY_FILTERS',
+        appliedQueryFilters: res.verticalResults.appliedQueryFilters || [],
+      });
 
       dispatch({
         type: 'SET_VERTICAL_RESPONSE',
@@ -210,7 +214,7 @@ export const useAnswers = () => {
       verticalKey,
       retrieveFacets: true,
       facets: facets,  // this needs to be only the selected facets
-      offset: results.length,
+      offset: results.length + 1,
     });
 
     dispatch({
