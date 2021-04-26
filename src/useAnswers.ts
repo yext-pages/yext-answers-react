@@ -89,6 +89,7 @@ export const useAnswers = () => {
         facets: displayableToSelectedFacets(createFacets(facets)),
       });
 
+      console.log("res.verticalResults.appliedQueryFilters: ",res.verticalResults?.appliedQueryFilters)
       dispatch({
         type: 'UPDATE_APPLIED_QUERY_FILTERS',
         appliedQueryFilters: res.verticalResults.appliedQueryFilters || [],

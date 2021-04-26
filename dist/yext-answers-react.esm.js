@@ -2603,7 +2603,8 @@ var useAnswers = function useAnswers() {
 
   var handleSearch = /*#__PURE__*/function () {
     var _ref2 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee2(searchTerm, facets, sortBys) {
-      var res;
+      var _res$verticalResults, res;
+
       return runtime_1.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
@@ -2633,6 +2634,7 @@ var useAnswers = function useAnswers() {
 
             case 6:
               res = _context2.sent;
+              console.log("res.verticalResults.appliedQueryFilters: ", (_res$verticalResults = res.verticalResults) == null ? void 0 : _res$verticalResults.appliedQueryFilters);
               dispatch({
                 type: 'UPDATE_APPLIED_QUERY_FILTERS',
                 appliedQueryFilters: res.verticalResults.appliedQueryFilters || []
@@ -2641,23 +2643,23 @@ var useAnswers = function useAnswers() {
                 type: 'SET_VERTICAL_RESPONSE',
                 response: res
               });
-              _context2.next = 14;
+              _context2.next = 15;
               break;
 
-            case 11:
-              _context2.prev = 11;
+            case 12:
+              _context2.prev = 12;
               _context2.t0 = _context2["catch"](3);
               dispatch({
                 type: 'SET_ERROR',
                 error: _context2.t0
               });
 
-            case 14:
+            case 15:
             case "end":
               return _context2.stop();
           }
         }
-      }, _callee2, null, [[3, 11]]);
+      }, _callee2, null, [[3, 12]]);
     }));
 
     return function handleSearch(_x3, _x4, _x5) {
