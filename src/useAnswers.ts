@@ -6,7 +6,7 @@ import {
   LocationBias,
   LatLong,
   DisplayableFacet,
-} from '@yext/answers-core';
+} from '../node_modules/@yext/answers-core';
 import { useContext } from 'react';
 import RecentSearches from 'recent-searches';
 import { AnswersConfig } from './AnswersConfig';

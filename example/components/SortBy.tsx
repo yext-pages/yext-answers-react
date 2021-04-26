@@ -1,4 +1,4 @@
-import { SortBy } from '@yext/answers-core';
+import { SortBy } from '../node_modules/@yext/answers-core';
 import * as React from 'react';
 import { useAnswers } from '../../.';
 

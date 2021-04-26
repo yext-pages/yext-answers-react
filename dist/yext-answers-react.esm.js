@@ -1,8 +1,1336 @@
-import { provideCore, Matcher } from '@yext/answers-core';
-export { provideCore } from '@yext/answers-core';
+import fetch from 'cross-fetch';
 import React, { createContext, useReducer, useContext, useEffect } from 'react';
 import { useQueryParams, StringParam, JsonParam, QueryParamProvider } from 'use-query-params';
 import RecentSearches from 'recent-searches';
+
+/**
+ * Provides methods for executing searches, submitting questions, and performing autocompletes.
+ *
+ * @public
+ */
+var AnswersCore = /** @class */ (function () {
+    /** @internal */
+    function AnswersCore(searchService, questionSubmissionService, autoCompleteService) {
+        this.searchService = searchService;
+        this.questionSubmissionService = questionSubmissionService;
+        this.autoCompleteService = autoCompleteService;
+    }
+    /**
+     * Performs an Answers search across all verticals.
+     *
+     * @remarks
+     * If rejected, the reason will be an {@link AnswersError}.
+     *
+     * @param request - Universal search request options
+     */
+    AnswersCore.prototype.universalSearch = function (request) {
+        return this.searchService.universalSearch(request);
+    };
+    /**
+     * Performs an Answers search for a single vertical.
+     *
+     * @remarks
+     * If rejected, the reason will be an {@link AnswersError}.
+     *
+     * @param request - Vertical search request options
+     */
+    AnswersCore.prototype.verticalSearch = function (request) {
+        return this.searchService.verticalSearch(request);
+    };
+    /**
+     * Submits a custom question to the Answers API.
+     *
+     * @remarks
+     * If rejected, the reason will be an {@link AnswersError}.
+     *
+     * @param request - Question submission request options
+     */
+    AnswersCore.prototype.submitQuestion = function (request) {
+        return this.questionSubmissionService.submitQuestion(request);
+    };
+    /**
+     * Performs an autocomplete request across all verticals.
+     *
+     * @remarks
+     * If rejected, the reason will be an {@link AnswersError}.
+     *
+     * @param request - Universal autocomplete request options
+     */
+    AnswersCore.prototype.universalAutocomplete = function (request) {
+        return this.autoCompleteService.universalAutocomplete(request);
+    };
+    /**
+     * Performs an autocomplete request for a single vertical.
+     *
+     * @remarks
+     * If rejected, the reason will be an {@link AnswersError}.
+     *
+     * @param request - Vertical autocomplete request options
+     */
+    AnswersCore.prototype.verticalAutocomplete = function (request) {
+        return this.autoCompleteService.verticalAutocomplete(request);
+    };
+    /**
+     * Performs a filtersearch request against specified fields within a single vertical.
+     *
+     * @remarks
+     * This differs from the vertical autocomplete because the vertical autocomplete operates on all entity fields whereas
+     * filtersearch operates only on specified fields. If rejected, the reason will be an {@link AnswersError}.
+     *
+     * @example
+     * A site has a 'products' vertical and would like a way to allow the user to narrow down the results by the product name.
+     * The site can add a second search bar powered by filtersearch which will include only product names as search
+     * suggestions.
+     *
+     * @param request - filtersearch request options
+     */
+    AnswersCore.prototype.filterSearch = function (request) {
+        return this.autoCompleteService.filterSearch(request);
+    };
+    return AnswersCore;
+}());
+
+function createFilter(filter) {
+    var fieldId = Object.keys(filter)[0];
+    var matcher = Object.keys(filter[fieldId])[0];
+    return {
+        fieldId: fieldId,
+        matcher: matcher,
+        value: filter[fieldId][matcher]
+    };
+}
+
+function createFacets(facets) {
+    if (!facets) {
+        return [];
+    }
+    return facets.map(function (facet) { return ({
+        fieldId: facet.fieldId,
+        displayName: facet.displayName,
+        options: createFacetOptions(facet.options)
+    }); });
+}
+function createFacetOptions(options) {
+    return options.map(function (option) {
+        var filter = createFilter(option.filter);
+        return {
+            displayName: option.displayName,
+            count: option.count,
+            selected: option.selected,
+            matcher: filter.matcher,
+            value: filter.value
+        };
+    });
+}
+
+function createLocationBias(data) {
+    return {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        displayName: data.locationDisplayName,
+        method: data.accuracy
+    };
+}
+
+function createSpellCheck(data) {
+    return {
+        originalQuery: data.originalQuery,
+        correctedQuery: data.correctedQuery.value,
+        type: data.type,
+    };
+}
+
+/**
+ * Represents the source of a {@link Result}.
+ *
+ * @public
+ */
+var Source;
+(function (Source) {
+    /** The result is from an Answers Knowledge Graph. */
+    Source["KnowledgeManager"] = "KNOWLEDGE_MANAGER";
+    /** The result is from Google Custom Search Engine. */
+    Source["Google"] = "GOOGLE_CSE";
+    /** The result is from Bing Search Engine. */
+    Source["Bing"] = "BING_CSE";
+    /** The result is from Zendesk. */
+    Source["Zendesk"] = "ZENDESK";
+    /** The result is from Algolia. */
+    Source["Algolia"] = "ALGOLIA";
+    /** The result was from a generic source. */
+    Source["Generic"] = "GENERIC";
+})(Source || (Source = {}));
+
+var __spreadArrays = (undefined && undefined.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
+/**
+ * Responsible for constructing {@link HighlightedValue}s
+ */
+var HighlightedValueFactory = /** @class */ (function () {
+    function HighlightedValueFactory() {
+    }
+    /**
+     * Constructs an array of {@link HighlightedValue}s
+     *
+     * @param data The raw highlightedFields data from the knowledge graph
+     */
+    HighlightedValueFactory.create = function (data) {
+        return this.createRecursively(data);
+    };
+    /**
+     * Constructs an array of {@link HighlightedValue}s
+     *
+     * @param data The raw highlightedFields data from the knowledge graph
+     * @param path The path to the current field which reflects its nested structure
+     */
+    HighlightedValueFactory.createRecursively = function (data, path) {
+        var _this = this;
+        if (path === void 0) { path = []; }
+        if (typeof data !== 'object' || data === null) {
+            return [];
+        }
+        var highlightedValues = [];
+        Object.entries(data).forEach(function (_a) {
+            var fieldName = _a[0], highlightedField = _a[1];
+            var currentPath = __spreadArrays(path);
+            currentPath.push(fieldName);
+            if (_this.isChildHighlightedField(highlightedField)) {
+                var value = highlightedField.value, matchedSubstrings = highlightedField.matchedSubstrings;
+                var highlightedValue = _this.from(value, fieldName, currentPath, matchedSubstrings);
+                highlightedValues.push(highlightedValue);
+            }
+            else {
+                var nestedHighlightedValues = _this.createRecursively(data[fieldName], currentPath);
+                highlightedValues.push.apply(highlightedValues, nestedHighlightedValues);
+            }
+        });
+        return highlightedValues;
+    };
+    /**
+     * Constructs a single {@link HighlightedValue}
+     */
+    HighlightedValueFactory.from = function (value, fieldName, path, matchedSubstrings) {
+        return {
+            value: value,
+            fieldName: fieldName,
+            path: path,
+            matchedSubstrings: matchedSubstrings
+        };
+    };
+    /**
+     * Determines whether or not a field is a {@link ChildHighlightedField}
+     *
+     * @param field
+     */
+    HighlightedValueFactory.isChildHighlightedField = function (field) {
+        return field.value !== undefined &&
+            field.matchedSubstrings !== undefined;
+    };
+    return HighlightedValueFactory;
+}());
+
+var __assign = (undefined && undefined.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+/**
+ * A factory which creates results from different sources
+ */
+var ResultsFactory = /** @class */ (function () {
+    function ResultsFactory() {
+    }
+    ResultsFactory.create = function (results, source) {
+        var _this = this;
+        if (!results) {
+            return [];
+        }
+        return results.map(function (result, index) {
+            result = __assign(__assign({}, result), { index: index + 1 });
+            switch (source) {
+                case Source.KnowledgeManager:
+                    return _this.fromKnowledgeManager(result);
+                case Source.Google:
+                    return _this.fromGoogleCustomSearchEngine(result);
+                case Source.Bing:
+                    return _this.fromBingCustomSearchEngine(result);
+                case Source.Zendesk:
+                    return _this.fromZendeskSearchEngine(result);
+                case Source.Algolia:
+                    return _this.fromAlgoliaSearchEngine(result);
+                default:
+                    return _this.fromGeneric(result);
+            }
+        });
+    };
+    ResultsFactory.fromKnowledgeManager = function (result) {
+        var _a;
+        var rawData = (_a = result.data) !== null && _a !== void 0 ? _a : {};
+        return {
+            rawData: rawData,
+            source: Source.KnowledgeManager,
+            index: result.index,
+            name: rawData.name,
+            description: rawData.description,
+            link: rawData.website,
+            id: rawData.id,
+            distance: result.distance,
+            distanceFromFilter: result.distanceFromFilter,
+            highlightedValues: HighlightedValueFactory.create(result.highlightedFields),
+            entityType: rawData.type
+        };
+    };
+    ResultsFactory.fromGoogleCustomSearchEngine = function (result) {
+        return {
+            rawData: result,
+            source: Source.Google,
+            index: result.index,
+            name: result.htmlTitle.replace(/(<([^>]+)>)/ig, ''),
+            description: result.htmlSnippet,
+            link: result.link
+        };
+    };
+    ResultsFactory.fromBingCustomSearchEngine = function (result) {
+        return {
+            rawData: result,
+            source: Source.Bing,
+            index: result.index,
+            name: result.name,
+            description: result.snippet,
+            link: result.url
+        };
+    };
+    ResultsFactory.fromZendeskSearchEngine = function (result) {
+        return {
+            rawData: result,
+            source: Source.Zendesk,
+            index: result.index,
+            name: result.title,
+            description: result.snippet,
+            link: result.html_url
+        };
+    };
+    ResultsFactory.fromAlgoliaSearchEngine = function (result) {
+        return {
+            rawData: result,
+            source: Source.Algolia,
+            index: result.index,
+            name: result.name,
+            id: result.objectID
+        };
+    };
+    ResultsFactory.fromGeneric = function (result) {
+        return {
+            rawData: result,
+            source: Source.Generic,
+            index: result.index,
+            name: result.name,
+            description: result.description,
+            link: result.website,
+            id: result.id,
+        };
+    };
+    ResultsFactory.fromDirectAnswer = function (result) {
+        var _a;
+        var rawData = (_a = result.fieldValues) !== null && _a !== void 0 ? _a : {};
+        return {
+            rawData: rawData,
+            source: Source.KnowledgeManager,
+            name: rawData.name,
+            description: rawData.description,
+            link: result.website,
+            id: result.id,
+            entityType: result.type,
+        };
+    };
+    return ResultsFactory;
+}());
+
+function createAppliedQueryFilter(data) {
+    return {
+        displayKey: data.displayKey,
+        displayValue: data.displayValue,
+        filter: createFilter(data.filter)
+    };
+}
+
+function createVerticalResults(data) {
+    var appliedQueryFilters = data.appliedQueryFilters
+        ? data.appliedQueryFilters.map(createAppliedQueryFilter)
+        : [];
+    return {
+        appliedQueryFilters: appliedQueryFilters,
+        queryDurationMillis: data.queryDurationMillis,
+        results: ResultsFactory.create(data.results, data.source),
+        resultsCount: data.resultsCount,
+        source: data.source,
+        verticalKey: data.verticalConfigId,
+    };
+}
+
+function createVerticalSearchResponse(data) {
+    var _a;
+    if (!data.response) {
+        throw new Error('The search data does not contain a response property');
+    }
+    return {
+        verticalResults: createVerticalResults(data.response),
+        queryId: data.response.queryId,
+        searchIntents: data.response.searchIntents,
+        facets: createFacets(data.response.facets),
+        spellCheck: data.response.spellCheck && createSpellCheck(data.response.spellCheck),
+        locationBias: data.response.locationBias && createLocationBias(data.response.locationBias),
+        allResultsForVertical: data.response.allResultsForVertical
+            && createVerticalSearchResponse({ response: data.response.allResultsForVertical }),
+        alternativeVerticals: data.response.alternativeVerticals && data.response.alternativeVerticals.modules
+            && data.response.alternativeVerticals.modules.map(createVerticalResults),
+        uuid: (_a = data.meta) === null || _a === void 0 ? void 0 : _a.uuid
+    };
+}
+
+var defaultApiVersion = 20190101;
+var defaultEndpoints = {
+    universalSearch: 'https://liveapi.yext.com/v2/accounts/me/answers/query',
+    verticalSearch: 'https://liveapi.yext.com/v2/accounts/me/answers/vertical/query',
+    questionSubmission: 'https://api.yext.com/v2/accounts/me/createQuestion',
+    status: 'https://answersstatus.pagescdn.com',
+    universalAutocomplete: 'https://liveapi-cached.yext.com/v2/accounts/me/answers/autocomplete',
+    verticalAutocomplete: 'https://liveapi-cached.yext.com/v2/accounts/me/answers/vertical/autocomplete',
+    filterSearch: 'https://liveapi-cached.yext.com/v2/accounts/me/answers/filtersearch',
+};
+
+/**
+ * The source of the search request.
+ *
+ * @public
+ */
+var QuerySource;
+(function (QuerySource) {
+    /**
+     * Indicates that the query was initiated from a standard Answers integration.
+     */
+    QuerySource["Standard"] = "STANDARD";
+    /**
+     * Indicates that the query was initaited from an Answers Overlay.
+     */
+    QuerySource["Overlay"] = "OVERLAY";
+})(QuerySource || (QuerySource = {}));
+
+function createDirectAnswer(data) {
+    return {
+        relatedResult: ResultsFactory.fromDirectAnswer(data.relatedItem.data),
+        verticalKey: data.relatedItem.verticalConfigId,
+        entityName: data.answer.entityName,
+        fieldName: data.answer.fieldName,
+        fieldApiName: data.answer.fieldApiName,
+        value: data.answer.value,
+        fieldType: data.answer.fieldType
+    };
+}
+
+function createUniversalSearchResponse(data) {
+    var verticalResults = Array.isArray(data.response.modules)
+        ? data.response.modules.map(createVerticalResults)
+        : [];
+    return {
+        verticalResults: verticalResults,
+        queryId: data.response.queryId,
+        directAnswer: data.response.directAnswer && createDirectAnswer(data.response.directAnswer),
+        searchIntents: data.response.searchIntents,
+        spellCheck: data.response.spellCheck && createSpellCheck(data.response.spellCheck),
+        locationBias: data.response.locationBias && createLocationBias(data.response.locationBias),
+        uuid: data.meta.uuid
+    };
+}
+
+function serializeStaticFilters(filter) {
+    if (isCombinedFilter(filter)) {
+        return JSON.stringify(shapeCombinedFilterForApi(filter));
+    }
+    return JSON.stringify(shapeFilterForApi(filter));
+}
+function shapeCombinedFilterForApi(combinedFilter) {
+    var _a;
+    var shapedFilters = [];
+    for (var _i = 0, _b = combinedFilter.filters; _i < _b.length; _i++) {
+        var filter = _b[_i];
+        if (isCombinedFilter(filter)) {
+            shapedFilters.push(shapeCombinedFilterForApi(filter));
+        }
+        else {
+            shapedFilters.push(shapeFilterForApi(filter));
+        }
+    }
+    return shapedFilters.length === 1
+        ? shapedFilters[0]
+        : (_a = {}, _a[combinedFilter.combinator] = shapedFilters, _a);
+}
+function shapeFilterForApi(filter) {
+    var _a, _b;
+    return _a = {},
+        _a[filter.fieldId] = (_b = {},
+            _b[filter.matcher] = filter.value,
+            _b),
+        _a;
+}
+function isCombinedFilter(filter) {
+    return (filter.filters !== undefined)
+        && (filter.combinator !== undefined);
+}
+
+var __assign$1 = (undefined && undefined.__assign) || function () {
+    __assign$1 = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign$1.apply(this, arguments);
+};
+function serializeFacets(filters) {
+    return JSON.stringify(filters.reduce(function (obj, facet) {
+        var fieldId = facet.fieldId;
+        var shapedFacets = shapeFacetOptionArrayForApi(facet.options, fieldId);
+        obj[fieldId] = shapedFacets;
+        return obj;
+    }, {}));
+}
+function shapeFacetOptionArrayForApi(options, fieldId) {
+    return options.map(function (option) {
+        return shapeFilterForApi(__assign$1(__assign$1({}, option), { fieldId: fieldId }));
+    });
+}
+
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (undefined && undefined.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+/**
+ * The implementation of SearchService which hits LiveAPI.
+ *
+ * @internal
+ */
+var SearchServiceImpl = /** @class */ (function () {
+    function SearchServiceImpl(config, httpService, apiResponseValidator) {
+        var _a, _b, _c, _d;
+        this.config = config;
+        this.httpService = httpService;
+        this.apiResponseValidator = apiResponseValidator;
+        this.universalSearchEndpoint = (_b = (_a = config.endpoints) === null || _a === void 0 ? void 0 : _a.universalSearch) !== null && _b !== void 0 ? _b : defaultEndpoints.universalSearch;
+        this.verticalSearchEndpoint = (_d = (_c = config.endpoints) === null || _c === void 0 ? void 0 : _c.verticalSearch) !== null && _d !== void 0 ? _d : defaultEndpoints.verticalSearch;
+    }
+    SearchServiceImpl.prototype.universalSearch = function (request) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function () {
+            var queryParams, response, validationResult;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        this.injectToStringMethods(request);
+                        queryParams = {
+                            input: request.query,
+                            experienceKey: this.config.experienceKey,
+                            api_key: this.config.apiKey,
+                            v: defaultApiVersion,
+                            version: this.config.experienceVersion,
+                            location: (_a = request.location) === null || _a === void 0 ? void 0 : _a.toString(),
+                            locale: this.config.locale,
+                            skipSpellCheck: request.skipSpellCheck,
+                            sessionTrackingEnabled: request.sessionTrackingEnabled,
+                            queryTrigger: request.queryTrigger,
+                            context: JSON.stringify(request.context || undefined),
+                            referrerPageUrl: request.referrerPageUrl,
+                            source: request.querySource || QuerySource.Standard
+                        };
+                        return [4 /*yield*/, this.httpService.get(this.universalSearchEndpoint, queryParams)];
+                    case 1:
+                        response = _b.sent();
+                        validationResult = this.apiResponseValidator.validate(response);
+                        if (validationResult instanceof Error) {
+                            return [2 /*return*/, Promise.reject(validationResult)];
+                        }
+                        return [2 /*return*/, createUniversalSearchResponse(response)];
+                }
+            });
+        });
+    };
+    SearchServiceImpl.prototype.verticalSearch = function (request) {
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function () {
+            var queryParams, response, validationResult;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        this.injectToStringMethods(request);
+                        queryParams = {
+                            experienceKey: this.config.experienceKey,
+                            api_key: this.config.apiKey,
+                            v: defaultApiVersion,
+                            version: this.config.experienceVersion,
+                            locale: this.config.locale,
+                            input: request.query,
+                            location: (_a = request.location) === null || _a === void 0 ? void 0 : _a.toString(),
+                            verticalKey: request.verticalKey,
+                            filters: request.staticFilters && serializeStaticFilters(request.staticFilters),
+                            limit: request.limit,
+                            offset: request.offset,
+                            retrieveFacets: request.retrieveFacets,
+                            facetFilters: request.facets && serializeFacets(request.facets),
+                            skipSpellCheck: request.skipSpellCheck,
+                            queryTrigger: request.queryTrigger,
+                            sessionTrackingEnabled: request.sessionTrackingEnabled,
+                            sortBys: JSON.stringify(request.sortBys || []),
+                            context: JSON.stringify(request.context || undefined),
+                            referrerPageUrl: request.referrerPageUrl,
+                            source: request.querySource || QuerySource.Standard,
+                            locationRadius: (_b = request.locationRadius) === null || _b === void 0 ? void 0 : _b.toString()
+                        };
+                        return [4 /*yield*/, this.httpService.get(this.verticalSearchEndpoint, queryParams)];
+                    case 1:
+                        response = _c.sent();
+                        validationResult = this.apiResponseValidator.validate(response);
+                        if (validationResult instanceof Error) {
+                            return [2 /*return*/, Promise.reject(validationResult)];
+                        }
+                        return [2 /*return*/, createVerticalSearchResponse(response)];
+                }
+            });
+        });
+    };
+    /**
+     * Injects toString() methods into the request objects that require them
+     */
+    SearchServiceImpl.prototype.injectToStringMethods = function (request) {
+        if (request.location) {
+            request.location.toString = function () {
+                return this.latitude + "," + this.longitude;
+            };
+        }
+    };
+    return SearchServiceImpl;
+}());
+
+var __awaiter$1 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator$1 = (undefined && undefined.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+/**
+ * An implementation of QuestionSubmissionService which hits LiveAPI.
+ *
+ * @internal
+ */
+var QuestionSubmissionServiceImpl = /** @class */ (function () {
+    function QuestionSubmissionServiceImpl(config, httpService, apiResponseValidator) {
+        var _a, _b;
+        this.config = config;
+        this.httpService = httpService;
+        this.apiResponseValidator = apiResponseValidator;
+        this.endpoint = (_b = (_a = this.config.endpoints) === null || _a === void 0 ? void 0 : _a.questionSubmission) !== null && _b !== void 0 ? _b : defaultEndpoints.questionSubmission;
+    }
+    QuestionSubmissionServiceImpl.prototype.submitQuestion = function (request) {
+        return __awaiter$1(this, void 0, void 0, function () {
+            var queryParams, body, requestInit, response, validationResult;
+            return __generator$1(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        queryParams = {
+                            v: defaultApiVersion,
+                            api_key: this.config.apiKey,
+                            sessionTrackingEnabled: request.sessionTrackingEnabled
+                        };
+                        body = {
+                            email: request.email,
+                            entityId: request.entityId,
+                            name: request.name,
+                            questionDescription: request.questionDescription,
+                            questionLanguage: this.config.locale,
+                            questionText: request.questionText,
+                            site: 'FIRSTPARTY'
+                        };
+                        requestInit = {
+                            mode: 'cors',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        };
+                        return [4 /*yield*/, this.httpService.post(this.endpoint, queryParams, body, requestInit)];
+                    case 1:
+                        response = _a.sent();
+                        validationResult = this.apiResponseValidator.validate(response);
+                        if (validationResult instanceof Error) {
+                            return [2 /*return*/, Promise.reject(validationResult)];
+                        }
+                        return [2 /*return*/, {
+                                uuid: response.meta.uuid
+                            }];
+                }
+            });
+        });
+    };
+    return QuestionSubmissionServiceImpl;
+}());
+
+/**
+ * Updates a url with the given params.
+ */
+function addParamsToURL(url, params) {
+    var parsedUrl = new URL(url);
+    var urlParams = new URLSearchParams(parsedUrl.search.substring(1));
+    var sanitizedParams = sanitizeQueryParams(params);
+    for (var key in sanitizedParams) {
+        urlParams.append(key, sanitizedParams[key].toString());
+    }
+    var updatedUrl = parsedUrl.origin + parsedUrl.pathname;
+    var paramsString = urlParams.toString();
+    if (paramsString) {
+        updatedUrl += '?' + paramsString;
+    }
+    return updatedUrl;
+}
+function sanitizeQueryParams(params) {
+    Object.keys(params).forEach(function (key) {
+        if (params[key] === undefined || params[key] === null) {
+            delete params[key];
+        }
+    });
+    return params;
+}
+
+var __assign$2 = (undefined && undefined.__assign) || function () {
+    __assign$2 = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign$2.apply(this, arguments);
+};
+/**
+ * Available HTTP request methods
+ */
+var RequestMethods;
+(function (RequestMethods) {
+    RequestMethods["GET"] = "get";
+    RequestMethods["POST"] = "post";
+})(RequestMethods || (RequestMethods = {}));
+/**
+ * HttpServiceImpl is a wrapper around the native implementation of AJAX
+ * related matters.
+ */
+var HttpServiceImpl = /** @class */ (function () {
+    function HttpServiceImpl() {
+    }
+    /**
+     * Perform a GET request
+     */
+    HttpServiceImpl.prototype.get = function (url, queryParams, options) {
+        var reqInitWithMethod = __assign$2({ method: RequestMethods.GET }, options);
+        return this.fetch(url, queryParams, reqInitWithMethod)
+            .then(function (res) { return res.json(); });
+    };
+    /**
+     * Perform a POST request
+     */
+    HttpServiceImpl.prototype.post = function (url, queryParams, body, reqInit) {
+        var sanitizedBodyParams = sanitizeQueryParams(body);
+        var reqInitWithMethodAndBody = __assign$2({ method: RequestMethods.POST, body: JSON.stringify(sanitizedBodyParams) }, reqInit);
+        return this.fetch(url, queryParams, reqInitWithMethodAndBody)
+            .then(function (res) { return res.json(); });
+    };
+    /**
+     * Perform a fetch, using the polyfill if needed.
+     */
+    HttpServiceImpl.prototype.fetch = function (url, queryParams, reqInit) {
+        var urlWithParams = addParamsToURL(url, queryParams);
+        return fetch(urlWithParams, reqInit);
+    };
+    return HttpServiceImpl;
+}());
+
+function createAutocompleteResult(result) {
+    var relatedItem = result.relatedItem
+        ? ResultsFactory.create([result.relatedItem], Source.KnowledgeManager)[0]
+        : result.relatedItem;
+    return {
+        filter: result.filter && createFilter(result.filter),
+        key: result.key,
+        matchedSubstrings: result.matchedSubstrings || [],
+        value: result.value,
+        relatedItem: relatedItem
+    };
+}
+
+function createAutocompleteResponse(data) {
+    if (!data.response) {
+        throw new Error('The autocomplete data does not contain a response property');
+    }
+    if (!Object.keys(data.response).length) {
+        throw new Error('The autocomplete response is empty');
+    }
+    var response = data.response;
+    var responseResults = response.results.map(createAutocompleteResult);
+    var inputIntents = response.input ? response.input.queryIntents : [];
+    return {
+        results: responseResults,
+        queryId: response.queryId,
+        inputIntents: inputIntents || [],
+        uuid: data.meta.uuid
+    };
+}
+function createFilterSearchResponse(data) {
+    if (!data.response) {
+        throw new Error('The autocomplete data does not contain a response property');
+    }
+    if (!Object.keys(data.response).length) {
+        throw new Error('The autocomplete response is empty');
+    }
+    var response = data.response;
+    var isSectioned = false;
+    var sections = [];
+    var responseResults = [];
+    // a filtersearch response may have a sections object
+    if (response.sections) {
+        isSectioned = true;
+        sections = response.sections.map(function (section) { return ({
+            label: section.label,
+            results: section.results.map(createAutocompleteResult)
+        }); });
+    }
+    else {
+        responseResults = response.results.map(createAutocompleteResult);
+    }
+    var inputIntents = response.input ? response.input.queryIntents : [];
+    return {
+        sectioned: isSectioned,
+        sections: sections,
+        results: responseResults,
+        queryId: response.queryId,
+        inputIntents: inputIntents || [],
+        uuid: data.meta.uuid
+    };
+}
+
+var __awaiter$2 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator$2 = (undefined && undefined.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+/**
+* A service that performs query suggestions.
+*/
+var AutocompleteServiceImpl = /** @class */ (function () {
+    function AutocompleteServiceImpl(config, httpRequester, apiResponseValidator) {
+        var _a, _b, _c, _d, _e, _f;
+        this.config = config;
+        this.httpService = httpRequester;
+        this.apiResponseValidator = apiResponseValidator;
+        this.universalEndpoint = (_b = (_a = this.config.endpoints) === null || _a === void 0 ? void 0 : _a.universalAutocomplete) !== null && _b !== void 0 ? _b : defaultEndpoints.universalAutocomplete;
+        this.verticalEndpoint = (_d = (_c = this.config.endpoints) === null || _c === void 0 ? void 0 : _c.verticalAutocomplete) !== null && _d !== void 0 ? _d : defaultEndpoints.verticalAutocomplete;
+        this.filterEndpoint = (_f = (_e = this.config.endpoints) === null || _e === void 0 ? void 0 : _e.filterSearch) !== null && _f !== void 0 ? _f : defaultEndpoints.filterSearch;
+    }
+    /**
+     * Retrieves query suggestions for universal.
+     *
+     * @param {AutocompleteRequest} request
+     * @returns {Promise<AutocompleteResponse>}
+     */
+    AutocompleteServiceImpl.prototype.universalAutocomplete = function (request) {
+        return __awaiter$2(this, void 0, void 0, function () {
+            var queryParams, response, validationResult;
+            return __generator$2(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        queryParams = {
+                            input: request.input,
+                            experienceKey: this.config.experienceKey,
+                            api_key: this.config.apiKey,
+                            v: defaultApiVersion,
+                            version: this.config.experienceVersion,
+                            locale: this.config.locale,
+                            sessionTrackingEnabled: request.sessionTrackingEnabled
+                        };
+                        return [4 /*yield*/, this.httpService.get(this.universalEndpoint, queryParams)];
+                    case 1:
+                        response = _a.sent();
+                        validationResult = this.apiResponseValidator.validate(response);
+                        if (validationResult instanceof Error) {
+                            return [2 /*return*/, Promise.reject(validationResult)];
+                        }
+                        return [2 /*return*/, createAutocompleteResponse(response)];
+                }
+            });
+        });
+    };
+    /**
+     * Retrieves query suggestions for a vertical.
+     *
+     * @param {VerticalAutocompleteRequest} request
+     * @returns {Promise<AutocompleteResponse>}
+     */
+    AutocompleteServiceImpl.prototype.verticalAutocomplete = function (request) {
+        return __awaiter$2(this, void 0, void 0, function () {
+            var queryParams, response, validationResult;
+            return __generator$2(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        queryParams = {
+                            input: request.input,
+                            experienceKey: this.config.experienceKey,
+                            api_key: this.config.apiKey,
+                            v: defaultApiVersion,
+                            version: this.config.experienceVersion,
+                            locale: this.config.locale,
+                            verticalKey: request.verticalKey,
+                            sessionTrackingEnabled: request.sessionTrackingEnabled
+                        };
+                        return [4 /*yield*/, this.httpService.get(this.verticalEndpoint, queryParams)];
+                    case 1:
+                        response = _a.sent();
+                        validationResult = this.apiResponseValidator.validate(response);
+                        if (validationResult instanceof Error) {
+                            return [2 /*return*/, Promise.reject(validationResult)];
+                        }
+                        return [2 /*return*/, createAutocompleteResponse(response)];
+                }
+            });
+        });
+    };
+    /**
+     * Retrieves query suggestions for filter search.
+     *
+     * @param {FilterSearchRequest} request
+     * @returns {Promise<AutocompleteResponse>}
+     */
+    AutocompleteServiceImpl.prototype.filterSearch = function (request) {
+        return __awaiter$2(this, void 0, void 0, function () {
+            var searchParams, queryParams, response, validationResult;
+            return __generator$2(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        searchParams = {
+                            sectioned: request.sectioned,
+                            fields: this.serializeSearchParameterFields(request.fields)
+                        };
+                        queryParams = {
+                            input: request.input,
+                            experienceKey: this.config.experienceKey,
+                            api_key: this.config.apiKey,
+                            v: defaultApiVersion,
+                            version: this.config.experienceVersion,
+                            locale: this.config.locale,
+                            search_parameters: JSON.stringify(searchParams),
+                            verticalKey: request.verticalKey,
+                            sessionTrackingEnabled: request.sessionTrackingEnabled
+                        };
+                        return [4 /*yield*/, this.httpService.get(this.filterEndpoint, queryParams)];
+                    case 1:
+                        response = _a.sent();
+                        validationResult = this.apiResponseValidator.validate(response);
+                        if (validationResult instanceof Error) {
+                            return [2 /*return*/, Promise.reject(validationResult)];
+                        }
+                        return [2 /*return*/, createFilterSearchResponse(response)];
+                }
+            });
+        });
+    };
+    AutocompleteServiceImpl.prototype.serializeSearchParameterFields = function (fields) {
+        return fields.map(function (_a) {
+            var fieldApiName = _a.fieldApiName, entityType = _a.entityType, fetchEntities = _a.fetchEntities;
+            return ({
+                fieldId: fieldApiName,
+                entityTypeId: entityType,
+                shouldFetchEntities: fetchEntities
+            });
+        });
+    };
+    return AutocompleteServiceImpl;
+}());
+
+var __extends = (undefined && undefined.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+/**
+ * Represents an error
+ *
+ * @remarks
+ * If the error originates from the Answer API, the code and type property will be present.
+ *
+ * @public
+ */
+var AnswersError = /** @class */ (function (_super) {
+    __extends(AnswersError, _super);
+    /** @internal */
+    function AnswersError(message, code, type) {
+        var _this = _super.call(this, message) || this;
+        _this.message = message;
+        _this.code = code;
+        _this.type = type;
+        return _this;
+    }
+    return AnswersError;
+}(Error));
+
+/**
+ * Determines whether or not an API response can be used to construct an answers-core response
+ *
+ * @internal
+ */
+var ApiResponseValidator = /** @class */ (function () {
+    function ApiResponseValidator() {
+    }
+    ApiResponseValidator.prototype.validate = function (apiResponse) {
+        var testFunctions = [
+            this.validateResponseProp,
+            this.validateMetaProp,
+            this.checkForApiErrors
+        ];
+        var testResults = testFunctions.map(function (testFn) { return testFn(apiResponse); });
+        return testResults.find(function (result) { return result instanceof AnswersError; });
+    };
+    ApiResponseValidator.prototype.validateResponseProp = function (apiResponse) {
+        if (!apiResponse.response) {
+            return new AnswersError('Malformed Answers API response: missing response property.');
+        }
+    };
+    ApiResponseValidator.prototype.validateMetaProp = function (apiResponse) {
+        if (!apiResponse.meta) {
+            return new AnswersError('Malformed Answers API response: missing meta property.');
+        }
+    };
+    ApiResponseValidator.prototype.checkForApiErrors = function (apiResponse) {
+        var _a, _b;
+        if (((_b = (_a = apiResponse.meta) === null || _a === void 0 ? void 0 : _a.errors) === null || _b === void 0 ? void 0 : _b.length) >= 1) {
+            var error = apiResponse.meta.errors[0];
+            return new AnswersError(error.message, error.code, error.type);
+        }
+    };
+    return ApiResponseValidator;
+}());
+
+/**
+ * A Matcher is a filtering operation.
+ *
+ * @public
+ */
+var Matcher;
+(function (Matcher) {
+    /**
+     * An equals comparison.
+     *
+     * @remarks
+     * Compatible with all field types.
+     */
+    Matcher["Equals"] = "$eq";
+    /**
+     * A not equals comparison.
+     *
+     * @remarks
+     * Compatible with all field types.
+     */
+    Matcher["NotEquals"] = "!$eq";
+    /**
+     * A less than comparison.
+     *
+     * @remarks
+     * Compatible with integer, float, date, datetime, and time fields.
+     */
+    Matcher["LessThan"] = "$lt";
+    /**
+     * A less than or equal to comparison.
+     *
+     * @remarks
+     * Compatible with integer, float, date, datetime, and time fields.
+     */
+    Matcher["LessThanOrEqualTo"] = "$le";
+    /**
+     * A greater than comparison.
+     *
+     * @remarks
+     * Compatible with integer, float, date, datetime, and time fields.
+     */
+    Matcher["GreaterThan"] = "$gt";
+    /**
+     * A greater than or equal to comparison.
+     *
+     * @remarks
+     * Compatible with integer, float, date, datetime, and time fields.
+     */
+    Matcher["GreaterThanOrEqualTo"] = "$ge";
+    /**
+     * A comparison of whether an entity is within a certain radius of a certain location.
+     *
+     * @remarks
+     * Only compatible with the builtin.location field.
+     */
+    Matcher["Near"] = "$near";
+})(Matcher || (Matcher = {}));
+
+/**
+ * Indicates how the filters in a {@link CombinedFilter} should be combined.
+ *
+ * @public
+ */
+var FilterCombinator;
+(function (FilterCombinator) {
+    /** Indicates that filters should be combined with a logical AND. */
+    FilterCombinator["AND"] = "$and";
+    /** Indicates that filters should be combined with a logical OR. */
+    FilterCombinator["OR"] = "$or";
+})(FilterCombinator || (FilterCombinator = {}));
+
+/**
+ * Describes the ways a search can be executed besides user input.
+ *
+ * @remarks
+ * Used for search analytics. If a user supplied the search query, do not include a QueryTrigger.
+ *
+ * @example
+ * An answers site may be configured to perform a search for 'What services do you offer?' when the page
+ * loads. Because that query is a default query rather than a user-supplied query, the Initialize QueryTrigger
+ * should be included in the request.
+ *
+ * @public
+ */
+var QueryTrigger;
+(function (QueryTrigger) {
+    /** Indicates that the query was triggered by a default initial search. */
+    QueryTrigger["Initialize"] = "initialize";
+    /** Indicates that the query was suggested by a {@link SpellCheck} response. */
+    QueryTrigger["Suggest"] = "suggest";
+})(QueryTrigger || (QueryTrigger = {}));
+
+/**
+ * The method of sorting.
+ *
+ * @public
+ */
+var SortType;
+(function (SortType) {
+    /**
+     * Sorts based on a field with the direction specified.
+     */
+    SortType["Field"] = "FIELD";
+    /**
+     * Sorts based on entity distance alone.
+     */
+    SortType["EntityDistance"] = "ENTITY_DISTANCE";
+    /**
+     * Sorts based on relevance according to the algorithm and, when relevant, location bias.
+     */
+    SortType["Relevance"] = "RELEVANCE";
+})(SortType || (SortType = {}));
+
+/**
+ * The direction of a sort.
+ *
+ * @public
+ */
+var Direction;
+(function (Direction) {
+    /**
+     *  An ascending sort
+     *
+     * @remarks
+     * For numbers this sort is low to high. For text it is alphabetical. For dates it is chronological order.
+     */
+    Direction["Ascending"] = "ASC";
+    /**
+     * A descending soft
+     *
+     * @remarks
+     * For numbers this sort is high to low. For text it is reverse alphabetical. For dates it is reverse
+     * chronological order.
+     */
+    Direction["Descending"] = "DESC";
+})(Direction || (Direction = {}));
+
+/**
+ * The method used to determine the location.
+ *
+ * @public
+ */
+var LocationBiasMethod;
+(function (LocationBiasMethod) {
+    /** Location was determined by IP address. */
+    LocationBiasMethod["Ip"] = "IP";
+    /**
+     * Location was supplied by the user's device.
+     *
+     * @remarks
+     * This location bias method is set when a location is supplied in search requests.
+     * */
+    LocationBiasMethod["Device"] = "DEVICE";
+    /**
+     * Location is unknown.
+     */
+    LocationBiasMethod["Unknown"] = "UNKNOWN";
+})(LocationBiasMethod || (LocationBiasMethod = {}));
+
+/**
+ * Represents intents from the Answers API.
+ *
+ * @public
+ */
+var SearchIntent;
+(function (SearchIntent) {
+    /** The Answers API is requesting a prompt for the user's location. */
+    SearchIntent["NearMe"] = "NEAR_ME";
+})(SearchIntent || (SearchIntent = {}));
+
+/**
+ * Represents the type of spell check performed.
+ *
+ * @public
+ */
+var SpellCheckType;
+(function (SpellCheckType) {
+    /** The API is suggesting an alternative query. */
+    SpellCheckType["Suggest"] = "SUGGEST";
+    /** The API is autocorrecting the original query. */
+    SpellCheckType["AutoCorrect"] = "AUTOCORRECT";
+    /** The API may be doing some combination of suggesting or autocorrecting. */
+    SpellCheckType["Combine"] = "COMBINE";
+})(SpellCheckType || (SpellCheckType = {}));
+
+/**
+ * The entrypoint to the answers-core library.
+ *
+ * @remarks
+ * Returns an {@link AnswersCore} instance.
+ *
+ * @param config - The answers-core config
+ *
+ * @public
+ */
+function provideCore(config) {
+    var httpService = new HttpServiceImpl();
+    var apiResponseValidator = new ApiResponseValidator();
+    var searchService = new SearchServiceImpl(config, httpService, apiResponseValidator);
+    var questionSubmissionService = new QuestionSubmissionServiceImpl(config, httpService, apiResponseValidator);
+    var autoCompleteService = new AutocompleteServiceImpl(config, httpService, apiResponseValidator);
+    return new AnswersCore(searchService, questionSubmissionService, autoCompleteService);
+}
 
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
   try {
@@ -87,7 +1415,7 @@ var initialState = {
   searchIntents: []
 };
 
-function createFacets(facets) {
+function createFacets$1(facets) {
   if (!facets) {
     return [];
   }
@@ -95,7 +1423,7 @@ function createFacets(facets) {
   return facets.map(function (facet) {
     var fieldId = facet.fieldId ? facet.fieldId : 'emptyFieldId';
     var displayName = facet.fieldId ? facet.fieldId : 'emptyDisplayName';
-    var options = facet.options ? createFacetOptions(facet.options) : [];
+    var options = facet.options ? createFacetOptions$1(facet.options) : [];
     return {
       fieldId: fieldId,
       displayName: displayName,
@@ -104,7 +1432,7 @@ function createFacets(facets) {
   });
 }
 
-function createFacetOptions(options) {
+function createFacetOptions$1(options) {
   return options.map(function (option) {
     return {
       displayName: option.displayName,
@@ -119,7 +1447,7 @@ function createFacetOptions(options) {
 var getFacetFilters = function getFacetFilters(facets) {
   //this needs to return all selected FILTERS - which no longer exist on facet objects
   // theoretically it could just be all of the facets
-  var displayableFacets = createFacets(facets); // turn facets into DisplayableFacets
+  var displayableFacets = createFacets$1(facets); // turn facets into DisplayableFacets
 
   return displayableFacets.map(function (f) {
     return [].concat(f.options.filter(function (o) {
@@ -137,7 +1465,7 @@ var getFacetFilters = function getFacetFilters(facets) {
 };
 var toggleFacetObject = function toggleFacetObject(facets, facetFieldId, optionDisplayName) {
   var updatedFacets = [].concat(facets);
-  var displayableFacets = createFacets(updatedFacets);
+  var displayableFacets = createFacets$1(updatedFacets);
   displayableFacets.forEach(function (f) {
     if (f.fieldId === facetFieldId) {
       f.options.forEach(function (o) {
@@ -266,7 +1594,7 @@ var reducer = function reducer(state, action) {
       {
         var response = action.response;
 
-        var _facets = createFacets(response.facets); //TODO(tredshaw): all displayable facets set to true
+        var _facets = createFacets$1(response.facets); //TODO(tredshaw): all displayable facets set to true
 
 
         var newFacetFilters = getFacetFilters(_facets);
@@ -325,7 +1653,7 @@ var reducer = function reducer(state, action) {
           hasSearched: true,
           results: response.verticalResults.results,
           facets: returnFacets,
-          displayableFacets: createFacets(returnFacets),
+          displayableFacets: createFacets$1(returnFacets),
           appliedFilters: appliedFilters,
           facetFilters: facetFilters,
           locationBias: response.locationBias,
@@ -1290,7 +2618,7 @@ var useAnswers = function useAnswers() {
               });
               dispatch({
                 type: 'UPDATE_DISPLAYABLE_FACETS',
-                displayableFacets: createFacets(facets)
+                displayableFacets: createFacets$1(facets)
               });
               _context2.prev = 3;
               _context2.next = 6;
@@ -1300,7 +2628,7 @@ var useAnswers = function useAnswers() {
                 verticalKey: verticalKey,
                 retrieveFacets: true,
                 sortBys: sortBys,
-                facets: displayableToSelectedFacets(createFacets(facets))
+                facets: displayableToSelectedFacets(createFacets$1(facets))
               });
 
             case 6:
@@ -1527,7 +2855,7 @@ var useAnswers = function useAnswers() {
                 context: {},
                 verticalKey: verticalKey,
                 retrieveFacets: true,
-                facets: displayableToSelectedFacets(createFacets(facets)),
+                facets: displayableToSelectedFacets(createFacets$1(facets)),
                 offset: results.length
               });
 
@@ -1564,7 +2892,7 @@ var useAnswers = function useAnswers() {
   };
 
   var clearSearch = function clearSearch() {
-    var displayFacets = createFacets(facets);
+    var displayFacets = createFacets$1(facets);
     dispatch({
       type: 'ON_SEARCH_TERM_CHANGE',
       searchTerm: ''
@@ -1708,5 +3036,5 @@ var Inner = function Inner(_ref) {
   return React.createElement(React.Fragment, null, children);
 };
 
-export { AnswersContext, useAnswers };
+export { AnswersContext, provideCore, useAnswers };
 //# sourceMappingURL=yext-answers-react.esm.js.map

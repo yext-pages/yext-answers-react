@@ -1,4 +1,4 @@
-import { Facet, Filter, DisplayableFacet } from '@yext/answers-core';
+import { Facet, Filter, DisplayableFacet } from '../node_modules/@yext/answers-core';
 import { AppliedFilter } from './initialState';
 export declare const getFacetFilters: (facets: Facet[]) => Filter[];
 export declare const getFacetAppliedFilters: (facets: Facet[]) => AppliedFilter[];

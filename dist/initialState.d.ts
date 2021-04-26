@@ -1,4 +1,4 @@
-import { AnswersCore, AutocompleteResult, Facet, Filter, SortBy, VerticalResults, LocationBias, SearchIntent, DisplayableFacet, AppliedQueryFilter } from '@yext/answers-core';
+import { AnswersCore, AutocompleteResult, Facet, Filter, SortBy, VerticalResults, LocationBias, SearchIntent, DisplayableFacet, AppliedQueryFilter } from '../node_modules/@yext/answers-core';
 declare type AutocompleteState = {
     autocompleteOptions: {
         value: string;

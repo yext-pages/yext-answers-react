@@ -1,4 +1,4 @@
-import { AutocompleteResult, Facet, SortBy, VerticalSearchResponse, DisplayableFacet, LocationBias, AppliedQueryFilter } from '@yext/answers-core';
+import { AutocompleteResult, Facet, SortBy, VerticalSearchResponse, DisplayableFacet, LocationBias, AppliedQueryFilter } from '../node_modules/@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { InitialStateType } from './initialState';
 export declare type Action = {

@@ -9,7 +9,7 @@ import {
   SearchIntent,
   DisplayableFacet,
   AppliedQueryFilter,
-} from '@yext/answers-core';
+} from '../node_modules/@yext/answers-core';
 type AutocompleteState = {
   autocompleteOptions: {
     value: string;

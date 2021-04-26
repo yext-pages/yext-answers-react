@@ -1,4 +1,4 @@
-import { Facet, SortBy, LocationBias, DisplayableFacet } from '@yext/answers-core';
+import { Facet, SortBy, LocationBias, DisplayableFacet } from '../node_modules/@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { InitialStateType } from './initialState';
 export declare const useAnswers: () => {

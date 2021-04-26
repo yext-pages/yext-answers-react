@@ -7,7 +7,7 @@ import {
   DisplayableFacet,
   LocationBias,
   AppliedQueryFilter,
-} from '@yext/answers-core';
+} from '../node_modules/@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { getFacetFilters, sortFacets } from './facetUtilties';
 import { AppliedFilter, InitialStateType } from './initialState';
