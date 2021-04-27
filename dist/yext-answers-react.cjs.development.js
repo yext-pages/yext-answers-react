@@ -168,90 +168,6 @@ var Source;
     Source["Generic"] = "GENERIC";
 })(Source || (Source = {}));
 
-var __spreadArrays = (undefined && undefined.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
-/**
- * Responsible for constructing {@link HighlightedValue}s
- */
-var HighlightedValueFactory = /** @class */ (function () {
-    function HighlightedValueFactory() {
-    }
-    /**
-     * Constructs an array of {@link HighlightedValue}s
-     *
-     * @param data The raw highlightedFields data from the knowledge graph
-     */
-    HighlightedValueFactory.create = function (data) {
-        return this.createRecursively(data);
-    };
-    /**
-     * Constructs an array of {@link HighlightedValue}s
-     *
-     * @param data The raw highlightedFields data from the knowledge graph
-     * @param path The path to the current field which reflects its nested structure
-     */
-    HighlightedValueFactory.createRecursively = function (data, path) {
-        var _this = this;
-        if (path === void 0) { path = []; }
-        if (typeof data !== 'object' || data === null) {
-            return [];
-        }
-        var highlightedValues = [];
-        Object.entries(data).forEach(function (_a) {
-            var fieldName = _a[0], highlightedField = _a[1];
-            var currentPath = __spreadArrays(path);
-            currentPath.push(fieldName);
-            if (_this.isChildHighlightedField(highlightedField)) {
-                var value = highlightedField.value, matchedSubstrings = highlightedField.matchedSubstrings;
-                var highlightedValue = _this.from(value, fieldName, currentPath, matchedSubstrings);
-                highlightedValues.push(highlightedValue);
-            }
-            else {
-                var nestedHighlightedValues = _this.createRecursively(data[fieldName], currentPath);
-                highlightedValues.push.apply(highlightedValues, nestedHighlightedValues);
-            }
-        });
-        return highlightedValues;
-    };
-    /**
-     * Constructs a single {@link HighlightedValue}
-     */
-    HighlightedValueFactory.from = function (value, fieldName, path, matchedSubstrings) {
-        return {
-            value: value,
-            fieldName: fieldName,
-            path: path,
-            matchedSubstrings: matchedSubstrings
-        };
-    };
-    /**
-     * Determines whether or not a field is a {@link ChildHighlightedField}
-     *
-     * @param field
-     */
-    HighlightedValueFactory.isChildHighlightedField = function (field) {
-        return field.value !== undefined &&
-            field.matchedSubstrings !== undefined;
-    };
-    return HighlightedValueFactory;
-}());
-
-var __assign = (undefined && undefined.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 /**
  * A factory which creates results from different sources
  */
@@ -264,88 +180,98 @@ var ResultsFactory = /** @class */ (function () {
             return [];
         }
         return results.map(function (result, index) {
-            result = __assign(__assign({}, result), { index: index + 1 });
+            var resultIndex = index + 1;
             switch (source) {
                 case Source.KnowledgeManager:
-                    return _this.fromKnowledgeManager(result);
+                    return _this.fromKnowledgeManager(result, resultIndex);
                 case Source.Google:
-                    return _this.fromGoogleCustomSearchEngine(result);
+                    return _this.fromGoogleCustomSearchEngine(result, resultIndex);
                 case Source.Bing:
-                    return _this.fromBingCustomSearchEngine(result);
+                    return _this.fromBingCustomSearchEngine(result, resultIndex);
                 case Source.Zendesk:
-                    return _this.fromZendeskSearchEngine(result);
+                    return _this.fromZendeskSearchEngine(result, resultIndex);
                 case Source.Algolia:
-                    return _this.fromAlgoliaSearchEngine(result);
+                    return _this.fromAlgoliaSearchEngine(result, resultIndex);
                 default:
-                    return _this.fromGeneric(result);
+                    return _this.fromGeneric(result, resultIndex);
             }
         });
     };
-    ResultsFactory.fromKnowledgeManager = function (result) {
+    ResultsFactory.fromKnowledgeManager = function (result, index) {
         var _a;
-        var rawData = (_a = result.data) !== null && _a !== void 0 ? _a : {};
+        var rawData = (_a = result.data) !== null && _a !== void 0 ? _a : result;
         return {
             rawData: rawData,
             source: Source.KnowledgeManager,
-            index: result.index,
+            index: index,
             name: rawData.name,
             description: rawData.description,
             link: rawData.website,
             id: rawData.id,
             distance: result.distance,
             distanceFromFilter: result.distanceFromFilter,
-            highlightedValues: HighlightedValueFactory.create(result.highlightedFields),
+            highlightedFields: result.highlightedFields,
             entityType: rawData.type
         };
     };
-    ResultsFactory.fromGoogleCustomSearchEngine = function (result) {
+    ResultsFactory.fromGoogleCustomSearchEngine = function (result, index) {
+        var _a;
+        var rawData = (_a = result.data) !== null && _a !== void 0 ? _a : result;
         return {
-            rawData: result,
+            rawData: rawData,
             source: Source.Google,
-            index: result.index,
-            name: result.htmlTitle.replace(/(<([^>]+)>)/ig, ''),
-            description: result.htmlSnippet,
-            link: result.link
+            index: index,
+            name: rawData.htmlTitle.replace(/(<([^>]+)>)/ig, ''),
+            description: rawData.htmlSnippet,
+            link: rawData.link
         };
     };
-    ResultsFactory.fromBingCustomSearchEngine = function (result) {
+    ResultsFactory.fromBingCustomSearchEngine = function (result, index) {
+        var _a;
+        var rawData = (_a = result.data) !== null && _a !== void 0 ? _a : result;
         return {
-            rawData: result,
+            rawData: rawData,
             source: Source.Bing,
-            index: result.index,
-            name: result.name,
-            description: result.snippet,
-            link: result.url
+            index: index,
+            name: rawData.name,
+            description: rawData.snippet,
+            link: rawData.url
         };
     };
-    ResultsFactory.fromZendeskSearchEngine = function (result) {
+    ResultsFactory.fromZendeskSearchEngine = function (result, index) {
+        var _a;
+        var rawData = (_a = result.data) !== null && _a !== void 0 ? _a : result;
         return {
-            rawData: result,
+            rawData: rawData,
             source: Source.Zendesk,
-            index: result.index,
-            name: result.title,
-            description: result.snippet,
-            link: result.html_url
+            index: index,
+            name: rawData.title,
+            description: rawData.snippet,
+            link: rawData.html_url
         };
     };
-    ResultsFactory.fromAlgoliaSearchEngine = function (result) {
+    ResultsFactory.fromAlgoliaSearchEngine = function (result, index) {
+        var _a;
+        var rawData = (_a = result.data) !== null && _a !== void 0 ? _a : result;
         return {
-            rawData: result,
+            rawData: rawData,
             source: Source.Algolia,
-            index: result.index,
-            name: result.name,
-            id: result.objectID
+            index: index,
+            name: rawData.name,
+            id: rawData.objectID
         };
     };
-    ResultsFactory.fromGeneric = function (result) {
+    ResultsFactory.fromGeneric = function (result, index) {
+        var _a;
+        var rawData = (_a = result.data) !== null && _a !== void 0 ? _a : result;
         return {
-            rawData: result,
+            rawData: rawData,
             source: Source.Generic,
-            index: result.index,
-            name: result.name,
-            description: result.description,
-            link: result.website,
-            id: result.id,
+            index: index,
+            name: rawData.name,
+            description: rawData.description,
+            link: rawData.website,
+            id: rawData.id
         };
     };
     ResultsFactory.fromDirectAnswer = function (result) {
@@ -368,11 +294,14 @@ function createAppliedQueryFilter(data) {
     return {
         displayKey: data.displayKey,
         displayValue: data.displayValue,
-        filter: createFilter(data.filter)
+        filter: createFilter(data.filter),
+        details: data.details
     };
 }
 
 function createVerticalResults(data) {
+    console.log("createVerticalResults data: ", data);
+    console.log("createVerticalResults: ", data.appliedQueryFilters);
     var appliedQueryFilters = data.appliedQueryFilters
         ? data.appliedQueryFilters.map(createAppliedQueryFilter)
         : [];
@@ -391,6 +320,7 @@ function createVerticalSearchResponse(data) {
     if (!data.response) {
         throw new Error('The search data does not contain a response property');
     }
+    console.log("createVerticalSearchResponse:", data.response);
     return {
         verticalResults: createVerticalResults(data.response),
         queryId: data.response.queryId,
@@ -434,22 +364,53 @@ var QuerySource;
     QuerySource["Overlay"] = "OVERLAY";
 })(QuerySource || (QuerySource = {}));
 
+/**
+ * Represents the type of direct answer.
+ *
+ * @public
+ */
+var DirectAnswerType;
+(function (DirectAnswerType) {
+    /** Indicates that the DirectAnswer is a {@link FeaturedSnippetDirectAnswer}. */
+    DirectAnswerType["FeaturedSnippet"] = "FEATURED_SNIPPET";
+    /** Indicates that the DirectAnswer is a {@link FieldValueDirectAnswer}. */
+    DirectAnswerType["FieldValue"] = "FIELD_VALUE";
+})(DirectAnswerType || (DirectAnswerType = {}));
+
 function createDirectAnswer(data) {
-    return {
-        relatedResult: ResultsFactory.fromDirectAnswer(data.relatedItem.data),
-        verticalKey: data.relatedItem.verticalConfigId,
-        entityName: data.answer.entityName,
-        fieldName: data.answer.fieldName,
-        fieldApiName: data.answer.fieldApiName,
-        value: data.answer.value,
-        fieldType: data.answer.fieldType
-    };
+    var isFieldValueDirectAnswer = (data === null || data === void 0 ? void 0 : data.type) === DirectAnswerType.FieldValue;
+    var isFeaturedSnippetDirectAnswer = (data === null || data === void 0 ? void 0 : data.type) === DirectAnswerType.FeaturedSnippet;
+    if (isFieldValueDirectAnswer) {
+        return {
+            type: DirectAnswerType.FieldValue,
+            value: data.answer.value,
+            relatedResult: ResultsFactory.fromDirectAnswer(data.relatedItem.data),
+            verticalKey: data.relatedItem.verticalConfigId,
+            entityName: data.answer.entityName,
+            fieldName: data.answer.fieldName,
+            fieldApiName: data.answer.fieldApiName,
+            fieldType: data.answer.fieldType
+        };
+    }
+    else if (isFeaturedSnippetDirectAnswer) {
+        return {
+            type: DirectAnswerType.FeaturedSnippet,
+            value: data.answer.value,
+            relatedResult: ResultsFactory.fromDirectAnswer(data.relatedItem.data),
+            verticalKey: data.relatedItem.verticalConfigId,
+            snippet: data.answer.snippet,
+        };
+    }
+    else {
+        throw new Error('The Answers API returned an unknown direct answer type');
+    }
 }
 
 function createUniversalSearchResponse(data) {
     var verticalResults = Array.isArray(data.response.modules)
         ? data.response.modules.map(createVerticalResults)
         : [];
+    console.log("createUniversalSearchResponse:", data.response);
     return {
         verticalResults: verticalResults,
         queryId: data.response.queryId,
@@ -496,8 +457,8 @@ function isCombinedFilter(filter) {
         && (filter.combinator !== undefined);
 }
 
-var __assign$1 = (undefined && undefined.__assign) || function () {
-    __assign$1 = Object.assign || function(t) {
+var __assign = (undefined && undefined.__assign) || function () {
+    __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
@@ -505,7 +466,7 @@ var __assign$1 = (undefined && undefined.__assign) || function () {
         }
         return t;
     };
-    return __assign$1.apply(this, arguments);
+    return __assign.apply(this, arguments);
 };
 function serializeFacets(filters) {
     return JSON.stringify(filters.reduce(function (obj, facet) {
@@ -517,7 +478,7 @@ function serializeFacets(filters) {
 }
 function shapeFacetOptionArrayForApi(options, fieldId) {
     return options.map(function (option) {
-        return shapeFilterForApi(__assign$1(__assign$1({}, option), { fieldId: fieldId }));
+        return shapeFilterForApi(__assign(__assign({}, option), { fieldId: fieldId }));
     });
 }
 
@@ -635,7 +596,8 @@ var SearchServiceImpl = /** @class */ (function () {
                             context: JSON.stringify(request.context || undefined),
                             referrerPageUrl: request.referrerPageUrl,
                             source: request.querySource || QuerySource.Standard,
-                            locationRadius: (_b = request.locationRadius) === null || _b === void 0 ? void 0 : _b.toString()
+                            locationRadius: (_b = request.locationRadius) === null || _b === void 0 ? void 0 : _b.toString(),
+                            queryId: request.queryId
                         };
                         return [4 /*yield*/, this.httpService.get(this.verticalSearchEndpoint, queryParams)];
                     case 1:
@@ -780,8 +742,8 @@ function sanitizeQueryParams(params) {
     return params;
 }
 
-var __assign$2 = (undefined && undefined.__assign) || function () {
-    __assign$2 = Object.assign || function(t) {
+var __assign$1 = (undefined && undefined.__assign) || function () {
+    __assign$1 = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
@@ -789,7 +751,7 @@ var __assign$2 = (undefined && undefined.__assign) || function () {
         }
         return t;
     };
-    return __assign$2.apply(this, arguments);
+    return __assign$1.apply(this, arguments);
 };
 /**
  * Available HTTP request methods
@@ -810,7 +772,7 @@ var HttpServiceImpl = /** @class */ (function () {
      * Perform a GET request
      */
     HttpServiceImpl.prototype.get = function (url, queryParams, options) {
-        var reqInitWithMethod = __assign$2({ method: RequestMethods.GET }, options);
+        var reqInitWithMethod = __assign$1({ method: RequestMethods.GET }, options);
         return this.fetch(url, queryParams, reqInitWithMethod)
             .then(function (res) { return res.json(); });
     };
@@ -819,7 +781,7 @@ var HttpServiceImpl = /** @class */ (function () {
      */
     HttpServiceImpl.prototype.post = function (url, queryParams, body, reqInit) {
         var sanitizedBodyParams = sanitizeQueryParams(body);
-        var reqInitWithMethodAndBody = __assign$2({ method: RequestMethods.POST, body: JSON.stringify(sanitizedBodyParams) }, reqInit);
+        var reqInitWithMethodAndBody = __assign$1({ method: RequestMethods.POST, body: JSON.stringify(sanitizedBodyParams) }, reqInit);
         return this.fetch(url, queryParams, reqInitWithMethodAndBody)
             .then(function (res) { return res.json(); });
     };
