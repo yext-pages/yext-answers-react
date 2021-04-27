@@ -1,7 +1,6 @@
-import { Facet, Filter, DisplayableFacet } from '@yext/answers-core';
+import { Facet, Filter, DisplayableFacet } from '../node_modules/@yext/answers-core';
 import { AppliedFilter } from './initialState';
 export declare const getFacetFilters: (facets: Facet[]) => Filter[];
-export declare const getSelectedFacets: (facets: Facet[]) => Facet[];
 export declare const getFacetAppliedFilters: (facets: Facet[]) => AppliedFilter[];
 export declare const toggleFacetObject: (facets: Facet[], facetFieldId: string, optionDisplayName: string) => DisplayableFacet[];
 export declare const displayableToSelectedFacets: (displayableFacets: DisplayableFacet[]) => Facet[];
