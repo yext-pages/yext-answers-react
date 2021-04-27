@@ -1,13 +1,17 @@
 import {
-  AutoCompleteResult,
+  AutocompleteResult,
   Facet,
   provideCore,
   SortBy,
   VerticalSearchResponse,
-} from '@yext/answers-core';
+  DisplayableFacet,
+  LocationBias,
+  AppliedQueryFilter,
+} from '../node_modules/@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { getFacetFilters, sortFacets } from './facetUtilties';
 import { AppliedFilter, InitialStateType } from './initialState';
+import { createFacets } from './createFacets';
 export type Action =
   | {
       type: 'SET_CONFIGURATION';
@@ -19,7 +23,7 @@ export type Action =
   | { type: 'SET_VERTICAL_RESPONSE'; response: VerticalSearchResponse }
   | {
       type: 'SET_AUTOCOMPLETE';
-      querySuggestions: AutoCompleteResult[];
+      querySuggestions: AutocompleteResult[];
       recentSearches: { query: string }[];
     }
   | { type: 'NEXT_AUTOCOMPLETE_OPTION' }
@@ -27,7 +31,10 @@ export type Action =
   | { type: 'PREVIOUS_AUTOCOMPLETE_OPTION' }
   | { type: 'APPEND_RESULTS'; results: any[] }
   | { type: 'UPDATE_SORT_BYS'; sortBys?: SortBy[] }
-  | { type: 'UPDATE_FACETS'; facets: Facet[] };
+  | { type: 'UPDATE_FACETS'; facets: Facet[] }
+  | { type: 'UPDATE_DISPLAYABLE_FACETS'; displayableFacets: DisplayableFacet[] }
+  | { type: 'UPDATE_APPLIED_QUERY_FILTERS'; appliedQueryFilters: AppliedQueryFilter[] }
+  | { type: 'UPDATE_LOCATION_BIAS'; locationBias: LocationBias }
 
 const reducer = (state: InitialStateType, action: Action): InitialStateType => {
   if (
@@ -82,12 +89,13 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
       };
     case 'SET_VERTICAL_RESPONSE': {
       const { response } = action;
-      const facets = (response.facets as any) as Facet[];
+      const facets = createFacets(response.facets); //TODO(tredshaw): all displayable facets set to true
       const newFacetFilters = getFacetFilters(facets);
       const facetFilters = [
         ...state.facetFilters.filter(f => {
-          const matchedIndex = newFacetFilters.findIndex(
-            g => g.fieldId === f.fieldId && g.comparedValue === f.comparedValue
+          const matchedIndex = newFacetFilters.findIndex((g) => {
+            return g.fieldId === f.fieldId && g.value === f.value
+          }
           );
           return matchedIndex === -1;
         }),
@@ -101,7 +109,7 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
       //     facetFilters.findIndex(
       //       f =>
       //         q.filter.fieldId === f.fieldId &&
-      //         q.displayValue === f.comparedValue
+      //         q.displayValue === f.value
       //     ) === -1;
 
       //   if (!isFacet) {
@@ -120,16 +128,17 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
               appliedFilters[matchedIndex].values.push(o.displayName);
             } else {
               appliedFilters.push({
-                displayName: f.displayName,
+                displayName: o.displayName,
                 fieldId: f.fieldId,
                 source: 'FACET',
-                values: [o.displayName],
+                values: [o.value.toString()],
               });
             }
           }
         });
       });
 
+      let returnFacets = facetSorter ? facetSorter(facets) : sortFacets(facets);
       return {
         ...state,
         loading: false,
@@ -144,9 +153,12 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
         verticalresults: response.verticalResults,
         hasSearched: true,
         results: response.verticalResults.results,
-        facets: facetSorter ? facetSorter(facets) : sortFacets(facets),
+        facets: returnFacets,
+        displayableFacets: createFacets(returnFacets),
         appliedFilters,
         facetFilters,
+        locationBias: response.locationBias,
+        searchIntents: response.searchIntents,
       };
     }
     case 'SET_AUTOCOMPLETE':
@@ -231,6 +243,12 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
         visibleSearchTerm: newVisibleSearchTerm,
       };
 
+    case 'UPDATE_LOCATION_BIAS':
+      const { locationBias } = action;
+      return {
+        ...state,
+        locationBias: locationBias
+      };
     case 'APPEND_RESULTS':
       return {
         ...state,
@@ -240,6 +258,18 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
       return {
         ...state,
         sortBys: action.sortBys,
+      };
+    case 'UPDATE_DISPLAYABLE_FACETS':
+      const { displayableFacets } = action;
+      return {
+        ...state,
+        displayableFacets: displayableFacets,
+      };
+    case 'UPDATE_APPLIED_QUERY_FILTERS':
+      const { appliedQueryFilters } = action;
+      return {
+        ...state,
+        appliedQueryFilters: appliedQueryFilters,
       };
     case 'UPDATE_FACETS':
       const { facets } = action;
