@@ -59,7 +59,7 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
-    "@yext/answers-core": "^1.0.0-beta.0",
+    "@yext/answers-core": "yext/answers-core#c1f63998dacb840c633e9988eaaeed13fb11bd32",
     "query-string": "^6.13.7",
     "recent-searches": "^1.0.5",
     "use-query-params": "^1.1.9"

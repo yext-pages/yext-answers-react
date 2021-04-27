@@ -1,14 +1,18 @@
 import {
-  SimpleFilter,
+  Facet,
   SortBy,
   VerticalSearchResponse,
-} from '@yext/answers-core';
+  LocationBias,
+  LatLong,
+  DisplayableFacet,
+} from '../node_modules/@yext/answers-core';
 import { useContext } from 'react';
 import RecentSearches from 'recent-searches';
 import { AnswersConfig } from './AnswersConfig';
 import { AppContext } from './AnswersStore';
-import { getFacetFilters, toggleFacetObject } from './facetUtilties';
+import { toggleFacetObject, displayableToFacets, displayableToSelectedFacets } from './facetUtilties';
 import { InitialStateType } from './initialState';
+import { createFacets } from './createFacets';
 
 const recentSearchesController = new RecentSearches();
 
@@ -23,7 +27,6 @@ export const useAnswers = () => {
     verticalKey,
     results,
     core,
-    facetFilters,
   } = state;
 
   const setConfiguration = (
@@ -43,7 +46,7 @@ export const useAnswers = () => {
   ) => {
     recentSearchesController.setRecentSearch(searchTerm);
 
-    handleSearch(searchTerm, clearFacets ? undefined : facetFilters, sortBys);
+    handleSearch(searchTerm, clearFacets ? [] : facets, sortBys);
   };
 
   const chooseAutocompleteOption = (index: number) => {
@@ -57,12 +60,22 @@ export const useAnswers = () => {
 
   const handleSearch = async (
     searchTerm: string,
-    facetFilters?: SimpleFilter[],
-    sortBys?: SortBy[]
+    facets?: Facet[],
+    sortBys?: SortBy[],
   ) => {
     dispatch({
       type: 'PREPARE_FOR_SEARCH',
       searchTerm: searchTerm,
+    });
+
+    dispatch({
+      type: 'UPDATE_FACETS',
+      facets: facets || [],
+    });
+
+    dispatch({
+      type: 'UPDATE_DISPLAYABLE_FACETS',
+      displayableFacets: createFacets(facets),
     });
 
     try {
@@ -72,7 +85,50 @@ export const useAnswers = () => {
         verticalKey,
         retrieveFacets: true,
         sortBys,
-        facetFilters,
+        facets: displayableToSelectedFacets(createFacets(facets)),
+      });
+
+      dispatch({
+        type: 'UPDATE_APPLIED_QUERY_FILTERS',
+        appliedQueryFilters: res.verticalResults.appliedQueryFilters || [],
+      });
+
+      dispatch({
+        type: 'SET_VERTICAL_RESPONSE',
+        response: res,
+      });
+    } catch (error) {
+      dispatch({
+        type: 'SET_ERROR',
+        error,
+      });
+    }
+  };
+
+  const handleLocationBiasSearch = async (
+    searchTerm: string,
+    locationBias: LocationBias,
+    displayableFacets: DisplayableFacet[],
+  ) => {
+    dispatch({
+      type: 'PREPARE_FOR_SEARCH',
+      searchTerm: searchTerm,
+    });
+
+    try {
+      const location : LatLong = {
+        latitude: locationBias.latitude,
+        longitude: locationBias.longitude
+      }
+
+      const res: VerticalSearchResponse = await core.verticalSearch({
+        query: searchTerm,
+        context: {},
+        verticalKey,
+        retrieveFacets: true,
+        sortBys,
+        facets: displayableToSelectedFacets(displayableFacets),
+        location: location
       });
       dispatch({
         type: 'SET_VERTICAL_RESPONSE',
@@ -93,7 +149,7 @@ export const useAnswers = () => {
       type: 'ON_SEARCH_TERM_CHANGE',
       searchTerm,
     });
-    const res = await core.verticalAutoComplete({
+    const res = await core.verticalAutocomplete({
       input: searchTerm,
       verticalKey,
     });
@@ -114,7 +170,7 @@ export const useAnswers = () => {
     });
 
     if (updateSearchResults) {
-      handleSearch(lastSearchedTerm, getFacetFilters(facets), sortBys);
+      handleSearch(lastSearchedTerm, facets, sortBys);
     }
   };
 
@@ -128,45 +184,36 @@ export const useAnswers = () => {
       facetFieldId,
       optionDisplayName
     );
-
     dispatch({
       type: 'UPDATE_FACETS',
-      facets: updatedFacets,
+      facets:  displayableToFacets(updatedFacets),
     });
 
-    console.log(facetFilters);
-    let removed = false;
-    const updatedFacetFilters = facetFilters.filter(f => {
-      if (f.fieldId === facetFieldId && f.comparedValue === optionDisplayName) {
-        removed = true;
-        return false;
-      } else {
-        return true;
-      }
-    });
-
-    if (!removed) {
-      updatedFacetFilters.push({
-        fieldId: facetFieldId,
-        comparator: '$eq',
-        comparedValue: optionDisplayName,
-      });
-    }
-
-    console.log(updatedFacetFilters);
-
+    dispatch({
+      type: 'UPDATE_DISPLAYABLE_FACETS',
+      displayableFacets: updatedFacets
+    })
+    
     if (updateSearchResults) {
-      handleSearch(lastSearchedTerm, updatedFacetFilters, sortBys);
+      const regularFacets = displayableToFacets(updatedFacets);
+
+      handleSearch(lastSearchedTerm, regularFacets, sortBys);
     }
   };
 
-  const loadMore = async () => {
-    const res = await core.verticalSearch({
+  const loadMore = async (facets: Facet[]) => {
+
+    dispatch({
+      type: 'UPDATE_FACETS',
+      facets: facets || [],
+    });
+
+    const res: VerticalSearchResponse = await core.verticalSearch({
       query: lastSearchedTerm,
       context: {},
       verticalKey,
       retrieveFacets: true,
-      facetFilters: getFacetFilters(facets),
+      facets: displayableToSelectedFacets(createFacets(facets)),
       offset: results.length,
     });
 
@@ -185,10 +232,11 @@ export const useAnswers = () => {
   };
 
   const clearSearch = () => {
+    const displayFacets = createFacets(facets)
     dispatch({ type: 'ON_SEARCH_TERM_CHANGE', searchTerm: '' });
     dispatch({
       type: 'UPDATE_FACETS',
-      facets: facets.map(f => {
+      facets: displayFacets.map(f => {
         return {
           ...f,
           options: f.options.map(o => {
@@ -208,6 +256,7 @@ export const useAnswers = () => {
     state,
     actions: {
       runSearch,
+      handleLocationBiasSearch,
       handleSearchTermChange,
       chooseAutocompleteOption,
       toggleFacet,
