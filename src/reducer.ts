@@ -6,7 +6,8 @@ import {
   VerticalSearchResponse,
   DisplayableFacet,
   LocationBias,
-} from '@yext/answers-core';
+  AppliedQueryFilter,
+} from '../node_modules/@yext/answers-core';
 import { AnswersConfig } from './AnswersConfig';
 import { getFacetFilters, sortFacets } from './facetUtilties';
 import { AppliedFilter, InitialStateType } from './initialState';
@@ -33,6 +34,7 @@ export type Action =
   | { type: 'SIMPLE_FILTER_UPDATE'; simpleFilters?: Facet[] }
   | { type: 'UPDATE_FACETS'; facets: Facet[] }
   | { type: 'UPDATE_DISPLAYABLE_FACETS'; displayableFacets: DisplayableFacet[] }
+  | { type: 'UPDATE_APPLIED_QUERY_FILTERS'; appliedQueryFilters: AppliedQueryFilter[] }
   | { type: 'UPDATE_LOCATION_BIAS'; locationBias: LocationBias }
 
 const reducer = (state: InitialStateType, action: Action): InitialStateType => {
@@ -263,6 +265,12 @@ const reducer = (state: InitialStateType, action: Action): InitialStateType => {
       return {
         ...state,
         displayableFacets: displayableFacets,
+      };
+    case 'UPDATE_APPLIED_QUERY_FILTERS':
+      const { appliedQueryFilters } = action;
+      return {
+        ...state,
+        appliedQueryFilters: appliedQueryFilters,
       };
     case 'UPDATE_FACETS':
       const { facets } = action;

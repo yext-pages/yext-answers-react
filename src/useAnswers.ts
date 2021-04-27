@@ -6,7 +6,7 @@ import {
   LocationBias,
   LatLong,
   DisplayableFacet,
-} from '@yext/answers-core';
+} from '../node_modules/@yext/answers-core';
 import { useContext } from 'react';
 import RecentSearches from 'recent-searches';
 import { AnswersConfig } from './AnswersConfig';
@@ -62,7 +62,7 @@ export const useAnswers = () => {
   const handleSearch = async (
     searchTerm: string,
     facets?: Facet[],
-    sortBys?: SortBy[]
+    sortBys?: SortBy[],
   ) => {
     dispatch({
       type: 'PREPARE_FOR_SEARCH',
@@ -89,6 +89,10 @@ export const useAnswers = () => {
         facets: displayableToSelectedFacets(createFacets(facets)),
       });
 
+      dispatch({
+        type: 'UPDATE_APPLIED_QUERY_FILTERS',
+        appliedQueryFilters: res.verticalResults.appliedQueryFilters || [],
+      });
 
       dispatch({
         type: 'SET_VERTICAL_RESPONSE',
@@ -196,20 +200,25 @@ export const useAnswers = () => {
     
     if (updateSearchResults) {
       const regularFacets = displayableToFacets(updatedFacets);
-      console.log(regularFacets)
 
       //TODO(tredshaw): this sets all facets to selected = true
       handleSearch(lastSearchedTerm, regularFacets, sortBys);
     }
   };
 
-  const loadMore = async (facets?: Facet[]) => {
-    const res = await core.verticalSearch({
+  const loadMore = async (facets: Facet[]) => {
+
+    dispatch({
+      type: 'UPDATE_FACETS',
+      facets: facets || [],
+    });
+
+    const res: VerticalSearchResponse = await core.verticalSearch({
       query: lastSearchedTerm,
       context: {},
       verticalKey,
       retrieveFacets: true,
-      facets: facets,  // this needs to be only the selected facets
+      facets: displayableToSelectedFacets(createFacets(facets)),
       offset: results.length,
     });
 

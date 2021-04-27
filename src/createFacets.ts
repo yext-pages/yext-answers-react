@@ -1,4 +1,4 @@
-import { DisplayableFacet, DisplayableFacetOption, Facet } from '@yext/answers-core';
+import { DisplayableFacet, DisplayableFacetOption, Facet } from '../node_modules/@yext/answers-core';
 
 export function createFacets(facets: any): DisplayableFacet[] {
   if (!facets) {

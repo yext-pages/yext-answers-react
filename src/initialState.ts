@@ -8,7 +8,8 @@ import {
   LocationBias,
   SearchIntent,
   DisplayableFacet,
-} from '@yext/answers-core';
+  AppliedQueryFilter,
+} from '../node_modules/@yext/answers-core';
 type AutocompleteState = {
   autocompleteOptions: {
     value: string;
@@ -52,6 +53,7 @@ export type InitialStateType = {
   facetSorter?: (facets: Facet[]) => Facet[];
   locationBias?: LocationBias;
   searchIntents?: SearchIntent[];
+  appliedQueryFilters?: AppliedQueryFilter[];
 };
 
 export const initialState: InitialStateType = {
